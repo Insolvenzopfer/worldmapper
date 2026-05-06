@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: worldmap
+      POSTGRES_USER: worldmap
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-worldmap_secret}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U worldmap"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://worldmap:${DB_PASSWORD:-worldmap_secret}@db:5432/worldmap
+      JWT_SECRET: ${JWT_SECRET:-please-change-this-secret-in-production}
+      PORT: 3000
+      NODE_ENV: development
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+      - ./backend/src:/app/src
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-8080}:80"
+    depends_on:
+      - backend
+    volumes:
+      # Hier wird dein lokaler 'public' Ordner direkt in den Nginx-Ordner gemountet
+      - ./frontend/public:/usr/share/nginx/html:ro
+
+volumes:
+  postgres_data:
+  uploads:

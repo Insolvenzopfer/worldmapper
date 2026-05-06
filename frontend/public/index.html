@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldMap – Anmelden</title>
+  <link rel="icon" type="image/webp" href="https://www.9ps.eu/dnd/items/Worldmapper/worldmapper_icon_small.webp">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <img src="https://www.9ps.eu/dnd/items/Worldmapper/worldmapper_icon.webp"
+             alt="WorldMap" style="width:40px;height:40px;object-fit:contain">
+        <h1>WorldMap</h1>
+      </div>
+      <p class="auth-subtitle">Kartenverwaltung für deine Welten</p>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="username">Benutzername</label>
+          <input type="text" id="username" placeholder="admin" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="password">Passwort</label>
+          <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <div id="loginError" class="error-msg hidden"></div>
+        <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+          <span>Anmelden</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    if (localStorage.getItem('wm_token')) window.location.href = '/dashboard.html';
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('loginError');
+      btn.disabled = true;
+      btn.querySelector('span').textContent = 'Anmelden…';
+      err.classList.add('hidden');
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error);
+        localStorage.setItem('wm_token', data.token);
+        localStorage.setItem('wm_user', JSON.stringify(data.user));
+        window.location.href = '/dashboard.html';
+      } catch (ex) {
+        err.textContent = ex.message;
+        err.classList.remove('hidden');
+        btn.disabled = false;
+        btn.querySelector('span').textContent = 'Anmelden';
+      }
+    });
+  </script>
+</body>
+</html>

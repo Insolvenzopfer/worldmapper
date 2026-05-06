@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WorldMap – Dashboard</title>
+  <link rel="icon" type="image/webp" href="https://www.9ps.eu/dnd/items/Worldmapper/worldmapper_icon_small.webp">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="app-page">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <img src="https://www.9ps.eu/dnd/items/Worldmapper/worldmapper_icon.webp"
+           alt="WorldMap" style="width:28px;height:28px;object-fit:contain">
+      WorldMap
+      <span class="version-badge" onclick="openChangelog()" style="cursor:pointer" title="Changelog anzeigen">v0.8.3</span>
+    </div>
+    <div class="navbar-actions">
+      <span id="currentUser" class="user-badge"></span>
+      <button class="btn btn-ghost btn-sm" onclick="openChangePasswordModal()">🔒 Passwort</button>
+      <button class="btn btn-ghost btn-sm hidden" id="iconsBtn">🎨 Icons</button>
+      <button class="btn btn-ghost btn-sm hidden" id="usersBtn">👥 Benutzer</button>
+      <button class="btn btn-ghost btn-sm hidden" id="logsBtn">📋 Logs</button>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Abmelden</button>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <div class="dashboard-container">
+    <div class="section-header">
+      <h2>Meine Karten</h2>
+      <button class="btn btn-primary hidden" id="createMapBtn">+ Neue Karte</button>
+    </div>
+    <div id="mapsGrid" class="maps-grid">
+      <div class="loading-state">Karten werden geladen…</div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Create / Edit Map ── -->
+  <div id="mapModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('mapModal')"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="mapModalTitle">Neue Karte</h3>
+        <button class="modal-close" onclick="closeModal('mapModal')">✕</button>
+      </div>
+      <form id="mapForm" class="modal-body">
+        <input type="hidden" id="mapId">
+        <div class="form-group">
+          <label>Kartenname *</label>
+          <input type="text" id="mapName" required placeholder="z.B. Mittelerde">
+        </div>
+        <div class="form-group">
+          <label>Beschreibung</label>
+          <textarea id="mapDesc" rows="3" placeholder="Optionale Beschreibung…"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('mapModal')">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Modal: Map Settings ── -->
+  <div id="settingsModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('settingsModal')"></div>
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 id="settingsTitle">Einstellungen</h3>
+        <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+      </div>
+      <div class="settings-tabs">
+        <button class="tab-btn active" data-tab="image">🖼 Bild</button>
+        <button class="tab-btn" data-tab="share">🔗 Teilen</button>
+        <button class="tab-btn" data-tab="editors">👥 Editoren</button>
+        <button class="tab-btn" data-tab="backup">💾 Backup</button>
+      </div>
+      <input type="hidden" id="settingsMapId">
+
+      <div class="tab-content active" id="tab-image">
+        <p class="hint">Kartenbild hochladen (PNG / JPG / WebP, max. 100 MB). Die Bildgröße bestimmt das Koordinatensystem.</p>
+        <div id="currentImagePreview" class="image-preview"></div>
+        <label class="file-upload-btn">
+          <input type="file" id="imageUpload" accept="image/*" onchange="uploadImage()">
+          📂 Bild hochladen / ersetzen
+        </label>
+        <div class="upload-progress hidden" id="uploadProgress">
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <span id="progressText" style="font-size:12px;color:var(--text-dim)">0%</span>
+        </div>
+
+        <!-- Scale & travel settings -->
+        <div style="border-top:1px solid var(--border);margin-top:1.2rem;padding-top:1rem">
+          <p style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:.8rem">⚖️ Maßstab & Reise</p>
+          <div class="form-group">
+            <label>Maßstab-Beschriftung <span style="color:var(--text-dim)">(z.B. "1 Kästchen = 24 Meilen")</span></label>
+            <input type="text" id="mapScaleLabel" placeholder="z.B. 1 Kästchen = 24 Meilen">
+          </div>
+          <div class="form-group">
+            <label>Kartenbreite in Meilen <span style="color:var(--text-dim)">(wie viele Meilen die volle Bildbreite abbildet)</span></label>
+            <input type="number" id="mapMilesWidth" placeholder="z.B. 500" min="0" step="0.1">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Reisedistanz pro Tag (Meilen)</label>
+              <input type="number" id="mapMilesPerDay" placeholder="24" min="0" step="0.1" value="24">
+            </div>
+            <div class="form-group">
+              <label>Reisestunden pro Tag</label>
+              <input type="number" id="mapHoursPerDay" placeholder="8" min="0" step="0.5" value="8">
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="saveMapScale()">💾 Maßstab speichern</button>
+          <div id="scaleMsg" style="margin-top:.5rem;font-size:12px;color:var(--success);display:none">✓ Gespeichert</div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-share">
+        <p class="hint">Öffentliche Links – Besucher brauchen keinen Account.</p>
+
+        <div class="share-section">
+          <h5>🗺 Karten-Link (alle sichtbaren Gruppen)</h5>
+          <div class="share-url-box">
+            <input type="text" id="shareUrlMap" readonly>
+            <button class="btn btn-primary btn-sm" onclick="copyUrl('shareUrlMap')">Kopieren</button>
+          </div>
+        </div>
+
+        <div class="share-section">
+          <h5>👥 Gruppen-Links (isolierte Betrachter-Ansicht)</h5>
+          <p class="hint">Besucher mit einem Gruppen-Link sehen ausschließlich Inhalte dieser einen Gruppe.</p>
+          <div id="groupShareLinks"><p class="hint" style="color:var(--text-dim)">Lädt…</p></div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-editors">
+        <p class="hint">Weitere Benutzer als Editoren hinzufügen (können Inhalte bearbeiten, aber keine Karte löschen) (können Inhalte bearbeiten, aber keine Karte löschen).</p>
+        <div id="editorsList" class="admins-list"></div>
+        <div class="add-admin-form">
+          <select id="addEditorSelect"><option value="">Benutzer wählen…</option></select>
+          <button class="btn btn-primary btn-sm" onclick="addEditor()">Hinzufügen</button>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-backup">
+        <p class="hint">Lade alle Kartendaten als JSON-Datei herunter. Das Kartenbild (Docker-Volume <code>uploads</code>) muss separat gesichert werden.</p>
+        <button class="btn btn-primary" onclick="downloadBackup()">💾 Backup herunterladen</button>
+        <p class="hint" style="margin-top:.8rem">
+          Datenbank-Backup via Shell:<br>
+          <code style="font-size:11px">docker exec worldmap2-db-1 pg_dump -U worldmap worldmap &gt; backup.sql</code>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: User Management (superadmin only) ── -->
+  <div id="usersModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('usersModal')"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Benutzerverwaltung</h3>
+        <button class="modal-close" onclick="closeModal('usersModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="usersList" class="users-list"></div>
+
+        <div style="border-top:1px solid var(--border);padding-top:.9rem;margin-top:.5rem">
+          <h4 style="margin-bottom:.75rem">Neuer Benutzer</h4>
+          <form id="createUserForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Benutzername *</label>
+                <input type="text" id="newUsername" required autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label>Passwort *</label>
+                <input type="password" id="newPassword" required autocomplete="new-password">
+              </div>
+            </div>
+            <div class="modal-footer" style="padding-top:0">
+              <button type="submit" class="btn btn-primary">Erstellen</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Change own password ── -->
+  <div id="changePwModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('changePwModal')"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Eigenes Passwort ändern</h3>
+        <button class="modal-close" onclick="closeModal('changePwModal')">✕</button>
+      </div>
+      <form id="changePwForm" class="modal-body">
+        <div class="form-group">
+          <label>Aktuelles Passwort *</label>
+          <input type="password" id="curPw" required autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label>Neues Passwort *</label>
+          <input type="password" id="newPw" required autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label>Neues Passwort bestätigen *</label>
+          <input type="password" id="newPw2" required autocomplete="new-password">
+        </div>
+        <div id="changePwErr" class="error-msg hidden"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('changePwModal')">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Speichern</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Modal: Custom POI Icons ── -->
+  <div id="iconsModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('iconsModal')"></div>
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3>🎨 POI-Icons verwalten</h3>
+        <button class="modal-close" onclick="closeModal('iconsModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Eigene Icons als Emoji oder Bild-URL (PNG, SVG, WebP). Wird automatisch erkannt.</p>
+        <div id="iconsList" class="icons-grid" style="margin-bottom:1rem"></div>
+        <div style="border-top:1px solid var(--border);padding-top:.9rem">
+          <h4 style="margin-bottom:.75rem">Neues Icon</h4>
+          <div class="form-group">
+            <label>Name *</label>
+            <input type="text" id="newIconName" placeholder="z.B. Drachenhöhle">
+          </div>
+          <div class="form-group">
+            <label>Emoji oder Bild-URL *</label>
+            <div style="display:flex;gap:.5rem;align-items:center">
+              <input type="text" id="newIconUrl" placeholder="🐉 oder https://…/icon.png" style="flex:1">
+              <div id="newIconPreview" style="width:36px;height:36px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:var(--bg3)"></div>
+            </div>
+            <p class="hint" style="margin-top:.3rem">Emoji einfach tippen · URL beginnt mit https://</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="createIcon()">+ Hinzufügen</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal: Admin sets user password ── -->
+  <div id="adminPwModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('adminPwModal')"></div>
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="adminPwTitle">Passwort setzen</h3>
+        <button class="modal-close" onclick="closeModal('adminPwModal')">✕</button>
+      </div>
+      <form id="adminPwForm" class="modal-body">
+        <input type="hidden" id="adminPwUserId">
+        <div class="form-group">
+          <label>Neues Passwort *</label>
+          <input type="password" id="adminNewPw" required autocomplete="new-password">
+        </div>
+        <div id="adminPwErr" class="error-msg hidden"></div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('adminPwModal')">Abbrechen</button>
+          <button type="submit" class="btn btn-primary">Setzen</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Changelog modal -->
+  <div id="changelogModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('changelogModal')"></div>
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3>📋 Changelog</h3>
+        <button class="modal-close" onclick="closeModal('changelogModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div id="changelogDisplay" style="min-height:80px"></div>
+        <div id="changelogEdit" class="hidden" style="margin-top:1rem">
+          <div id="changelogEditorContainer" class="quill-container" style="min-height:200px"></div>
+          <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="cancelChangelogEdit()">Abbrechen</button>
+            <button class="btn btn-primary" onclick="saveChangelog()">Speichern</button>
+          </div>
+        </div>
+        <div style="margin-top:.75rem;display:flex;gap:.5rem" id="changelogActions">
+          <button class="btn btn-ghost btn-sm hidden" id="editChangelogBtn" onclick="startChangelogEdit()">✏️ Bearbeiten</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.snow.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/quill/1.3.7/quill.min.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/dashboard.js"></script>
+
+  <!-- Audit Log Modal -->
+  <div id="auditModal" class="modal hidden">
+    <div class="modal-backdrop" onclick="closeModal('auditModal')"></div>
+    <div class="modal-dialog" style="max-width:950px">
+      <div class="modal-header">
+        <h3>📋 Aktionsprotokoll</h3>
+        <button class="modal-close" onclick="closeModal('auditModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="audit-search">
+          <input type="text" id="auditSearch" placeholder="Suchen: User, Aktion, IP…"
+            oninput="_auditDebounce()">
+          <button class="btn btn-ghost btn-sm" onclick="loadAuditLog(0)">🔍</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportAuditCsv()">⬇ CSV</button>
+        </div>
+        <div class="audit-log-wrap">
+          <table class="audit-log-table">
+            <thead><tr>
+              <th style="width:145px">Zeit</th>
+              <th style="width:110px">Benutzer</th>
+              <th style="width:105px">IP</th>
+              <th style="width:160px">Aktion</th>
+              <th>Detail</th>
+            </tr></thead>
+            <tbody id="auditBody">
+              <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:1.5rem">Lädt…</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="auditPager" style="display:flex;align-items:center;gap:.5rem;margin-top:.6rem;font-size:12px;color:var(--text-dim)"></div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,232 @@
+{
+  "settlements": {
+    "label": "Siedlungen & Gebäude",
+    "icons": {
+      "capital": "👑",
+      "city": "🏙",
+      "village": "🏘",
+      "castle": "🏰",
+      "japanesecastle": "🏯",
+      "oldhouse": "🏚",
+      "ruins": "🏚",
+      "hut": "🛖",
+      "tent": "⛺",
+      "classicalbuilding": "🏛",
+      "fountain": "⛲",
+      "circus": "🎪"
+    }
+  },
+  "spiritual": {
+    "label": "Religion & Mystik",
+    "icons": {
+      "temple": "⛪",
+      "mosque": "🕌",
+      "shintoshrine": "⛩",
+      "portal": "🌀",
+      "magic": "🔮",
+      "alembic": "⚗",
+      "fairy": "🧚",
+      "unicorn": "🦄",
+      "phoenix": "🐦‍🔥",
+      "dragon": "🐉",
+      "dragonface": "🐲",
+      "ghost": "👻",
+      "devil": "😈",
+      "gin": "🧞",
+      "moai": "🗿"
+    }
+  },
+  "nature": {
+    "label": "Natur & Landschaft",
+    "icons": {
+      "mountain": "🏔️",
+      "snowmountain": "🏔",
+      "vulkan": "🌋",
+      "rock": "🪨",
+      "island": "🏝",
+      "cave": "🕳",
+      "forest": "🌲",
+      "deciduoustree": "🌳",
+      "leaflesstree": "🪾",
+      "wood": "🪵",
+      "flower": "🌹",
+      "bouquet": "💐",
+      "cactus": "🌵",
+      "mushroom": "🍄",
+      "brownmushroom": "🍄‍🟫",
+      "wave": "🌊",
+      "rainbow": "🌈",
+      "fire": "🔥",
+      "voltage": "⚡"
+    }
+  },
+  "maritime": {
+    "label": "Wasser & Maritim",
+    "icons": {
+      "port": "⚓",
+      "canoe": "🛶",
+      "pirat": "🏴‍☠️",
+      "merperson": "🧜",
+      "whale": "🐳",
+      "dolphin": "🐬",
+      "shark": "🦈",
+      "octopus": "🐙",
+      "coral": "🪸",
+      "jellyfish": "🪼",
+      "crab": "🦀",
+      "seal": "🦭"
+    }
+  },
+  "combat_danger": {
+    "label": "Gefahr & Kampf",
+    "icons": {
+      "swords": "⚔️",
+      "shield": "🛡",
+      "dagger": "🗡",
+      "bow": "🏹",
+      "dreizack": "🔱",
+      "danger": "☠",
+      "death": "💀",
+      "zombie": "🧟",
+      "troll": "🧌",
+      "trex": "🦖",
+      "snake": "🐍",
+      "crocodile": "🐊",
+      "spider": "🕷",
+      "radioactive": "☢",
+      "biohazard": "☣"
+    }
+  },
+  "economy": {
+    "label": "Handel & Ressourcen",
+    "icons": {
+      "shop": "🛒",
+      "money": "💰",
+      "gold": "🪎",
+      "treasure": "💎",
+      "tavern": "🍺",
+      "hammer": "🔨",
+      "pick": "⛏",
+      "hammerandpick": "⚒",
+      "shovel": "🪏",
+      "saw": "🪚",
+      "gear": "⚙",
+      "basket": "🧺",
+      "ladder": "🪜"
+    }
+  },
+  "fauna": {
+    "label": "Tiere (Land)",
+    "icons": {
+      "horse": "🐎",
+      "cow": "🐄",
+      "pig": "🐖",
+      "goat": "🐐",
+      "ram": "🐏",
+      "boar": "🐗",
+      "deer": "🦌",
+      "moose": "🫎",
+      "bison": "🦬",
+      "buffalo": "🐃",
+      "camel": "🐪",
+      "llama": "🦙",
+      "mammoth": "🦣",
+      "wolf": "🐺",
+      "fox": "🦊",
+      "bear": "🐻",
+      "tiger": "🐅",
+      "dog": "🐕",
+      "blackcat": "🐈‍⬛",
+      "furry": "😺",
+      "racoon": "🦝",
+      "monkey": "🐒",
+      "rabbit": "🐇",
+      "chipmunk": "🐿",
+      "beaver": "🦫",
+      "bat": "🦇",
+      "mouse": "🐁"
+    }
+  },
+  "birds": {
+    "label": "Vögel",
+    "icons": {
+      "eagle": "🦅",
+      "dove": "🕊",
+      "parrot": "🦜",
+      "rooster": "🐓",
+      "turkey": "🦃",
+      "duck": "🦆",
+      "penguin": "🐧",
+      "dodo": "🦤",
+      "nest": "🪺"
+    }
+  },
+  "food_agriculture": {
+    "label": "Essen & Landwirtschaft",
+    "icons": {
+      "corn": "🌽",
+      "rice": "🌾",
+      "garlic": "🧄",
+      "greenapple": "🍏",
+      "peach": "🍑",
+      "coconut": "🥥",
+      "bread": "🍞",
+      "pancakes": "🥞",
+      "cheese": "🧀",
+      "meat": "🍗",
+      "honey": "🍯",
+      "pie": "🥧",
+      "cookie": "🍪",
+      "lollipop": "🍭",
+      "food": "🍲",
+      "drink": "🫖",
+      "amphora": "🏺"
+    }
+  },
+  "adventure_misc": {
+    "label": "Abenteuer & Tools",
+    "icons": {
+      "quest": "📜",
+      "scroll": "📜",
+      "book": "📖",
+      "note": "📌",
+      "pushpin": "📍",
+      "pencil": "✏",
+      "telescope": "🔭",
+      "candle": "🕯",
+      "diyalamp": "🪔",
+      "grave": "🪦",
+      "coffin": "⚰",
+      "urn": "⚱",
+      "bone": "🦴",
+      "speech": "💬",
+      "zzz": "💤",
+      "hands": "🙏",
+      "juggling": "🤹",
+      "artist": "🎨",
+      "chequeredflag": "🏁"
+    }
+  },
+  "music": {
+    "label": "Musik",
+    "icons": {
+      "horn": "📯",
+      "violin": "🎻",
+      "benjo": "🪕",
+      "harp": "🪉",
+      "drums": "🪘"
+    }
+  },
+  "system": {
+    "label": "Abstrakt & System",
+    "icons": {
+      "circle": "⬤",
+      "star": "⭐",
+      "star_bright": "🌟",
+      "broom": "🧹",
+      "soap": "🧼",
+      "placard": "🪧",
+      "teddybear": "🧸"
+    }
+  }
+}
