@@ -3,15 +3,16 @@
     "label": "Siedlungen & Gebäude",
     "icons": {
       "capital": "👑",
+      "lilie": "⚜️",
       "city": "🏙",
-      "village": "🏘",
+      "village": "🏘️",
       "castle": "🏰",
       "japanesecastle": "🏯",
-      "oldhouse": "🏚",
-      "ruins": "🏚",
+      "ruins": "🏚️",
       "hut": "🛖",
       "tent": "⛺",
-      "classicalbuilding": "🏛",
+      "tent_tree": "🏕️",
+      "classicalbuilding": "🏛️",
       "fountain": "⛲",
       "circus": "🎪"
     }
@@ -21,10 +22,10 @@
     "icons": {
       "temple": "⛪",
       "mosque": "🕌",
-      "shintoshrine": "⛩",
+      "shintoshrine": "⛩️",
       "portal": "🌀",
       "magic": "🔮",
-      "alembic": "⚗",
+      "alembic": "⚗️",
       "fairy": "🧚",
       "unicorn": "🦄",
       "phoenix": "🐦‍🔥",
@@ -33,18 +34,20 @@
       "ghost": "👻",
       "devil": "😈",
       "gin": "🧞",
-      "moai": "🗿"
+      "moai": "🗿",
+      "magicstick": "🪄"
     }
   },
   "nature": {
     "label": "Natur & Landschaft",
     "icons": {
+      "map": "🗺️",
       "mountain": "🏔️",
-      "snowmountain": "🏔",
+      "snowmountain": "🗻",
       "vulkan": "🌋",
       "rock": "🪨",
-      "island": "🏝",
-      "cave": "🕳",
+      "island": "🏝️",
+      "cave": "🕳️",
       "forest": "🌲",
       "deciduoustree": "🌳",
       "leaflesstree": "🪾",
@@ -57,7 +60,9 @@
       "wave": "🌊",
       "rainbow": "🌈",
       "fire": "🔥",
-      "voltage": "⚡"
+      "voltage": "⚡",
+      "leaf_brown": "🍂",
+      "leaf_green": "🍃"
     }
   },
   "maritime": {
@@ -81,11 +86,11 @@
     "label": "Gefahr & Kampf",
     "icons": {
       "swords": "⚔️",
-      "shield": "🛡",
-      "dagger": "🗡",
+      "shield": "🛡️",
+      "dagger": "🗡️",
       "bow": "🏹",
       "dreizack": "🔱",
-      "danger": "☠",
+      "danger": "☠️",
       "death": "💀",
       "zombie": "🧟",
       "troll": "🧌",
@@ -104,15 +109,18 @@
       "money": "💰",
       "gold": "🪎",
       "treasure": "💎",
-      "tavern": "🍺",
+      "tavern": "🍻",
       "hammer": "🔨",
-      "pick": "⛏",
-      "hammerandpick": "⚒",
+      "pick": "⛏️",
+      "hammerandpick": "⚒️",
       "shovel": "🪏",
       "saw": "🪚",
-      "gear": "⚙",
+      "gear": "⚙️",
       "basket": "🧺",
-      "ladder": "🪜"
+      "ladder": "🪜",
+      "key": "🗝️",
+      "present": "🎁",
+      "painting": "🖼️"
     }
   },
   "fauna": {
@@ -141,7 +149,7 @@
       "racoon": "🦝",
       "monkey": "🐒",
       "rabbit": "🐇",
-      "chipmunk": "🐿",
+      "chipmunk": "🐿️",
       "beaver": "🦫",
       "bat": "🦇",
       "mouse": "🐁"
@@ -150,25 +158,30 @@
   "birds": {
     "label": "Vögel",
     "icons": {
+      "feather": "🪶",
       "eagle": "🦅",
-      "dove": "🕊",
+      "dove": "🕊️",
       "parrot": "🦜",
       "rooster": "🐓",
       "turkey": "🦃",
       "duck": "🦆",
       "penguin": "🐧",
       "dodo": "🦤",
-      "nest": "🪺"
+      "nest": "🪺",
+      "bird": "🐦‍⬛"
     }
   },
   "food_agriculture": {
     "label": "Essen & Landwirtschaft",
     "icons": {
+      "wine": "🍷",
+      "beer": "🍺",
       "corn": "🌽",
       "rice": "🌾",
       "garlic": "🧄",
       "greenapple": "🍏",
       "peach": "🍑",
+      "trauben": "🍇",
       "coconut": "🥥",
       "bread": "🍞",
       "pancakes": "🥞",
@@ -190,13 +203,13 @@
       "book": "📖",
       "note": "📌",
       "pushpin": "📍",
-      "pencil": "✏",
+      "pencil": "✏️",
       "telescope": "🔭",
-      "candle": "🕯",
+      "candle": "🕯️",
       "diyalamp": "🪔",
       "grave": "🪦",
-      "coffin": "⚰",
-      "urn": "⚱",
+      "coffin": "⚰️",
+      "urn": "⚱️",
       "bone": "🦴",
       "speech": "💬",
       "zzz": "💤",
