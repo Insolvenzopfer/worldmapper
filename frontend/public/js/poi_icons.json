@@ -220,6 +220,7 @@
   "system": {
     "label": "Abstrakt & System",
     "icons": {
+      "unknown": "?",
       "circle": "⬤",
       "star": "⭐",
       "star_bright": "🌟",

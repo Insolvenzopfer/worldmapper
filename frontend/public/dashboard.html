@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,15 +8,17 @@
   <link rel="icon" type="image/webp" href="https://www.9ps.eu/dnd/items/Worldmapper/worldmapper_icon_small.webp">
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body class="app-page">
 
   <!-- Navbar -->
   <nav class="navbar">
     <div class="navbar-brand">
-      <img src="https://www.9ps.eu/dnd/items/Worldmapper/worldmapper_icon.webp"
-           alt="WorldMap" style="width:28px;height:28px;object-fit:contain">
+      <img src="https://www.9ps.eu/dnd/items/Worldmapper/worldmapper_icon.webp" alt="WorldMap"
+        style="width:28px;height:28px;object-fit:contain">
       WorldMap
-      <span class="version-badge" onclick="openChangelog()" style="cursor:pointer" title="Changelog anzeigen">v0.8.3</span>
+      <span class="version-badge" onclick="openChangelog()" style="cursor:pointer"
+        title="Changelog anzeigen">v0.8.4</span>
     </div>
     <div class="navbar-actions">
       <span id="currentUser" class="user-badge"></span>
@@ -81,14 +84,17 @@
       <input type="hidden" id="settingsMapId">
 
       <div class="tab-content active" id="tab-image">
-        <p class="hint">Kartenbild hochladen (PNG / JPG / WebP, max. 100 MB). Die Bildgröße bestimmt das Koordinatensystem.</p>
+        <p class="hint">Kartenbild hochladen (PNG / JPG / WebP, max. 100 MB). Die Bildgröße bestimmt das
+          Koordinatensystem.</p>
         <div id="currentImagePreview" class="image-preview"></div>
         <label class="file-upload-btn">
           <input type="file" id="imageUpload" accept="image/*" onchange="uploadImage()">
           📂 Bild hochladen / ersetzen
         </label>
         <div class="upload-progress hidden" id="uploadProgress">
-          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
           <span id="progressText" style="font-size:12px;color:var(--text-dim)">0%</span>
         </div>
 
@@ -96,11 +102,13 @@
         <div style="border-top:1px solid var(--border);margin-top:1.2rem;padding-top:1rem">
           <p style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:.8rem">⚖️ Maßstab & Reise</p>
           <div class="form-group">
-            <label>Maßstab-Beschriftung <span style="color:var(--text-dim)">(z.B. "1 Kästchen = 24 Meilen")</span></label>
+            <label>Maßstab-Beschriftung <span style="color:var(--text-dim)">(z.B. "1 Kästchen = 24
+                Meilen")</span></label>
             <input type="text" id="mapScaleLabel" placeholder="z.B. 1 Kästchen = 24 Meilen">
           </div>
           <div class="form-group">
-            <label>Kartenbreite in Meilen <span style="color:var(--text-dim)">(wie viele Meilen die volle Bildbreite abbildet)</span></label>
+            <label>Kartenbreite in Meilen <span style="color:var(--text-dim)">(wie viele Meilen die volle Bildbreite
+                abbildet)</span></label>
             <input type="number" id="mapMilesWidth" placeholder="z.B. 500" min="0" step="0.1">
           </div>
           <div class="form-row">
@@ -114,7 +122,8 @@
             </div>
           </div>
           <button class="btn btn-primary btn-sm" onclick="saveMapScale()">💾 Maßstab speichern</button>
-          <div id="scaleMsg" style="margin-top:.5rem;font-size:12px;color:var(--success);display:none">✓ Gespeichert</div>
+          <div id="scaleMsg" style="margin-top:.5rem;font-size:12px;color:var(--success);display:none">✓ Gespeichert
+          </div>
         </div>
       </div>
 
@@ -132,21 +141,28 @@
         <div class="share-section">
           <h5>👥 Gruppen-Links (isolierte Betrachter-Ansicht)</h5>
           <p class="hint">Besucher mit einem Gruppen-Link sehen ausschließlich Inhalte dieser einen Gruppe.</p>
-          <div id="groupShareLinks"><p class="hint" style="color:var(--text-dim)">Lädt…</p></div>
+          <div id="groupShareLinks">
+            <p class="hint" style="color:var(--text-dim)">Lädt…</p>
+          </div>
         </div>
       </div>
 
       <div class="tab-content" id="tab-editors">
-        <p class="hint">Weitere Benutzer als Editoren hinzufügen (können Inhalte bearbeiten, aber keine Karte löschen) (können Inhalte bearbeiten, aber keine Karte löschen).</p>
+        <p class="hint">Weitere Benutzer als Editoren hinzufügen (können Inhalte bearbeiten, aber keine Karte löschen)
+          (können Inhalte bearbeiten, aber keine Karte löschen).</p>
         <div id="editorsList" class="admins-list"></div>
         <div class="add-admin-form">
-          <select id="addEditorSelect"><option value="">Benutzer wählen…</option></select>
+          <select id="addEditorSelect">
+            <option value="">Benutzer wählen…</option>
+          </select>
           <button class="btn btn-primary btn-sm" onclick="addEditor()">Hinzufügen</button>
         </div>
       </div>
 
       <div class="tab-content" id="tab-backup">
-        <p class="hint">Lade alle Kartendaten als JSON-Datei herunter. Das Kartenbild (Docker-Volume <code>uploads</code>) muss separat gesichert werden.</p>
+        <p class="hint">Lade alle Kartendaten als JSON-Datei herunter. Das Kartenbild (Docker-Volume
+          <code>uploads</code>) muss separat gesichert werden.
+        </p>
         <button class="btn btn-primary" onclick="downloadBackup()">💾 Backup herunterladen</button>
         <p class="hint" style="margin-top:.8rem">
           Datenbank-Backup via Shell:<br>
@@ -240,7 +256,9 @@
             <label>Emoji oder Bild-URL *</label>
             <div style="display:flex;gap:.5rem;align-items:center">
               <input type="text" id="newIconUrl" placeholder="🐉 oder https://…/icon.png" style="flex:1">
-              <div id="newIconPreview" style="width:36px;height:36px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:var(--bg3)"></div>
+              <div id="newIconPreview"
+                style="width:36px;height:36px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;background:var(--bg3)">
+              </div>
             </div>
             <p class="hint" style="margin-top:.3rem">Emoji einfach tippen · URL beginnt mit https://</p>
           </div>
@@ -291,7 +309,8 @@
           </div>
         </div>
         <div style="margin-top:.75rem;display:flex;gap:.5rem" id="changelogActions">
-          <button class="btn btn-ghost btn-sm hidden" id="editChangelogBtn" onclick="startChangelogEdit()">✏️ Bearbeiten</button>
+          <button class="btn btn-ghost btn-sm hidden" id="editChangelogBtn" onclick="startChangelogEdit()">✏️
+            Bearbeiten</button>
         </div>
       </div>
     </div>
@@ -313,29 +332,34 @@
       </div>
       <div class="modal-body">
         <div class="audit-search">
-          <input type="text" id="auditSearch" placeholder="Suchen: User, Aktion, IP…"
-            oninput="_auditDebounce()">
+          <input type="text" id="auditSearch" placeholder="Suchen: User, Aktion, IP…" oninput="_auditDebounce()">
           <button class="btn btn-ghost btn-sm" onclick="loadAuditLog(0)">🔍</button>
           <button class="btn btn-ghost btn-sm" onclick="exportAuditCsv()">⬇ CSV</button>
         </div>
         <div class="audit-log-wrap">
           <table class="audit-log-table">
-            <thead><tr>
-              <th style="width:145px">Zeit</th>
-              <th style="width:110px">Benutzer</th>
-              <th style="width:105px">IP</th>
-              <th style="width:160px">Aktion</th>
-              <th>Detail</th>
-            </tr></thead>
+            <thead>
+              <tr>
+                <th style="width:145px">Zeit</th>
+                <th style="width:110px">Benutzer</th>
+                <th style="width:105px">IP</th>
+                <th style="width:160px">Aktion</th>
+                <th>Detail</th>
+              </tr>
+            </thead>
             <tbody id="auditBody">
-              <tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:1.5rem">Lädt…</td></tr>
+              <tr>
+                <td colspan="5" style="text-align:center;color:var(--text-dim);padding:1.5rem">Lädt…</td>
+              </tr>
             </tbody>
           </table>
         </div>
-        <div id="auditPager" style="display:flex;align-items:center;gap:.5rem;margin-top:.6rem;font-size:12px;color:var(--text-dim)"></div>
+        <div id="auditPager"
+          style="display:flex;align-items:center;gap:.5rem;margin-top:.6rem;font-size:12px;color:var(--text-dim)"></div>
       </div>
     </div>
   </div>
 
 </body>
+
 </html>

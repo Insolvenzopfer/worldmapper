@@ -541,7 +541,7 @@ function makePoiIcon(color, iconKey, transparent) {
       ? `<img src="${escHtml(customIcon.image_url)}" style="width:${s - 8}px;height:${s - 8}px;object-fit:contain" onerror="this.style.opacity='.2'">`
       : `<span style="font-size:${Math.round(s * 0.65)}px;line-height:1">${escHtml(customIcon.image_url)}</span>`;
   } else {
-    const sym = POI_ICONS[iconKey] || '⬤';
+    const sym = POI_ICONS[iconKey] || '?';
     innerHtml = `<span style="font-size:${Math.round(s * 0.5)}px;line-height:1">${sym}</span>`;
   }
 
@@ -1263,7 +1263,7 @@ function showPoiModal(p, lat, lng) {
       group_id, visibility, name: document.getElementById('fmName').value,
       description: getQuillHtml(_pQuill),
       lat: +document.getElementById('fmLat').value, lng: +document.getElementById('fmLng').value,
-      icon: document.querySelector('.icon-option.selected')?.dataset.icon || 'circle',
+      icon: document.querySelector('.icon-option.selected')?.dataset.icon || 'unknown',
       color: document.getElementById('fmColor').value,
       bg_transparent: document.getElementById('fmTransparentSwatch').classList.contains('selected'),
       links: gatherLinks()
@@ -1287,7 +1287,7 @@ function toggleTransparentSwatch() {
   if (lbl) lbl.style.display = sel ? '' : 'none';
 }
 
-function iconGrid(current = 'circle') {
+function iconGrid(current = 'unknown') {
   // Show currently selected icon
   const custId = +current;
   const selCust = !isNaN(custId) && custId > 0 && _customIcons.find(ic => ic.id === custId);
@@ -1298,7 +1298,7 @@ function iconGrid(current = 'circle') {
       ? `<img src="${escHtml(selCust.image_url)}" style="width:20px;height:20px;object-fit:contain">`
       : `<span style="font-size:18px">${escHtml(selCust.image_url)}</span>`;
   } else {
-    selHtml = `<span style="font-size:18px">${POI_ICONS[current] || '⬤'}</span>`;
+    selHtml = `<span style="font-size:18px">${POI_ICONS[current] || '?'}</span>`;
   }
 
   // Build grouped sections
@@ -1374,6 +1374,7 @@ function buildRoutesEditor() {
       <span class="editor-item-name">${escHtml(r.name)} <span style="color:var(--text-dim);font-size:10px">(${wps.length})</span></span>
       <span class="vis-badge ${visCls}">${visLbl}</span>
       <button class="btn-icon" title="Bearbeiten" onclick="event.stopPropagation();openEditRoute(${r.id})">✏</button>
+      <button class="btn-icon" title="Wegpunkt hinzufügen" onclick="event.stopPropagation();startQuickAddWaypoint(${r.id})">📍</button>
       <button class="btn-icon" onclick="event.stopPropagation();deleteRoute(${r.id})">🗑</button>
     </div>`;
   }).join('');
@@ -1381,6 +1382,59 @@ function buildRoutesEditor() {
     ${items}
     <button class="btn btn-ghost editor-add-btn" onclick="openEditRoute(null)">+ Route erstellen</button>
   </div>`;
+}
+
+function attachRouteEditorListeners() {
+  document.querySelectorAll('.add-wp-quick-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Verhindert focusRoute()
+      const routeId = parseInt(btn.getAttribute('data-route-id'));
+      const route = mapData.routes.find(r => r.id === routeId);
+
+      if (route) {
+        startQuickAddWaypoint(route);
+      }
+    });
+  });
+}
+
+async function startQuickAddWaypoint(routeId) {
+  // Route im Datensatz finden
+  const r = mapData.routes.find(r => r.id === routeId);
+  if (!r) {
+    showToast('Route nicht gefunden', 'error');
+    return;
+  }
+
+  enablePickMode();
+  showModeIndicator('📍 Klick auf Karte für neuen Wegpunkt · ESC abbrechen');
+
+  // Einmaliger Click-Listener
+  leafletMap.once('click', async ev => {
+    disablePickMode();
+    hideModeIndicator();
+
+    // Nächsten Index berechnen
+    const existing = mapData.waypoints.filter(w => w.route_id === r.id);
+    const nextIdx = existing.length ? Math.max(...existing.map(w => +w.order_index)) + 1 : 0;
+
+    try {
+      await API.post(`/api/maps/${mapData.map.id}/routes/${r.id}/waypoints`, {
+        lat: ev.latlng.lat,
+        lng: ev.latlng.lng,
+        title: '',
+        info: '',
+        order_index: nextIdx
+      });
+      showToast('Wegpunkt hinzugefügt', 'success');
+
+      // OPTIONAL: Falls vorhanden, Daten neu laden oder Karte refreshen
+      if (typeof fetchMapData === 'function') fetchMapData();
+
+    } catch (ex) {
+      showToast(ex.message, 'error');
+    }
+  });
 }
 
 function openEditRoute(id) {
