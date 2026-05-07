@@ -164,6 +164,13 @@
           <code>uploads</code>) muss separat gesichert werden.
         </p>
         <button class="btn btn-primary" onclick="downloadBackup()">💾 Backup herunterladen</button>
+        <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
+
+        <p class="hint">Wähle eine Backup-Datei (.json), um den aktuellen Stand zu überschreiben.</p>
+        <input type="file" id="restoreInput" accept=".json" style="display:none" onchange="handleRestore(this)">
+        <button class="btn btn-secondary" onclick="document.getElementById('restoreInput').click()">
+          Restaurieren (Upload)
+        </button>
         <p class="hint" style="margin-top:.8rem">
           Datenbank-Backup via Shell:<br>
           <code style="font-size:11px">docker exec worldmap2-db-1 pg_dump -U worldmap worldmap &gt; backup.sql</code>

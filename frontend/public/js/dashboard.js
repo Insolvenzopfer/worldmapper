@@ -16,7 +16,7 @@ if (ME.is_superadmin) {
 
 function escHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g,
-    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 function escAttr(s) { return String(s ?? '').replace(/'/g, "\\'"); }
 
@@ -59,8 +59,8 @@ function renderMaps() {
     return `<div class="map-card${locked ? ' map-card-locked' : ''}">
       <div class="map-card-img">
         ${m.image_path
-          ? `<img src="${m.thumb_path || m.image_path}" alt="${escHtml(m.name)}" loading="lazy">`
-          : '<span class="no-img">🗺️</span>'}
+        ? `<img src="${m.thumb_path || m.image_path}" alt="${escHtml(m.name)}" loading="lazy">`
+        : '<span class="no-img">🗺️</span>'}
       </div>
       <div class="map-card-body">
         <div class="map-card-title">${escHtml(m.name)} ${lockBadge}</div>
@@ -71,8 +71,8 @@ function renderMaps() {
           <button class="btn btn-ghost btn-sm" onclick="openSettings(${m.id})">⚙️ Einstellungen</button>
           <button class="btn btn-ghost btn-sm" onclick="editMap(${m.id})">✏️</button>
           ${locked && ME.is_superadmin
-            ? `<button class="btn btn-ghost btn-sm" style="color:#fca5a5" onclick="forceUnlockMap(${m.id})" title="Sperre aufheben">🔓</button>`
-            : ''}
+        ? `<button class="btn btn-ghost btn-sm" style="color:#fca5a5" onclick="forceUnlockMap(${m.id})" title="Sperre aufheben">🔓</button>`
+        : ''}
           <button class="btn btn-danger btn-sm" onclick="deleteMap(${m.id},'${escAttr(m.name)}')" style="margin-left:auto">🗑</button>
         </div>
       </div>
@@ -82,9 +82,9 @@ function renderMaps() {
 
 // Create
 document.getElementById('createMapBtn').addEventListener('click', () => {
-  document.getElementById('mapId').value    = '';
-  document.getElementById('mapName').value  = '';
-  document.getElementById('mapDesc').value  = '';
+  document.getElementById('mapId').value = '';
+  document.getElementById('mapName').value = '';
+  document.getElementById('mapDesc').value = '';
   document.getElementById('mapModalTitle').textContent = 'Neue Karte erstellen';
   openModal('mapModal');
 });
@@ -93,33 +93,33 @@ document.getElementById('createMapBtn').addEventListener('click', () => {
 function editMap(id) {
   const m = allMaps.find(x => x.id === id);
   if (!m) return;
-  document.getElementById('mapId').value    = m.id;
-  document.getElementById('mapName').value  = m.name;
-  document.getElementById('mapDesc').value  = m.description || '';
+  document.getElementById('mapId').value = m.id;
+  document.getElementById('mapName').value = m.name;
+  document.getElementById('mapDesc').value = m.description || '';
   document.getElementById('mapModalTitle').textContent = 'Karte bearbeiten';
   openModal('mapModal');
 }
 
 document.getElementById('mapForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const id   = document.getElementById('mapId').value;
+  const id = document.getElementById('mapId').value;
   const body = {
-    name:        document.getElementById('mapName').value,
+    name: document.getElementById('mapName').value,
     description: document.getElementById('mapDesc').value
   };
   // Preserve scale fields if map already exists
   if (id) {
     const existing = allMaps.find(m => m.id === +id);
     if (existing) {
-      body.map_scale_label      = existing.map_scale_label      ?? null;
-      body.map_miles_width      = existing.map_miles_width      ?? null;
+      body.map_scale_label = existing.map_scale_label ?? null;
+      body.map_miles_width = existing.map_miles_width ?? null;
       body.travel_miles_per_day = existing.travel_miles_per_day ?? 24;
       body.travel_hours_per_day = existing.travel_hours_per_day ?? 8;
     }
   }
   try {
     if (id) await API.put(`/api/maps/${id}`, body);
-    else     await API.post('/api/maps', body);
+    else await API.post('/api/maps', body);
     closeModal('mapModal');
     await loadMaps();
     showToast(id ? 'Karte aktualisiert' : 'Karte erstellt', 'success');
@@ -151,8 +151,8 @@ async function openSettings(id) {
   document.getElementById('shareUrlMap').value = `${location.origin}/map.html?t=${m.share_token}`;
 
   // Scale & travel fields
-  document.getElementById('mapScaleLabel').value  = m.map_scale_label  || '';
-  document.getElementById('mapMilesWidth').value  = m.map_miles_width  != null ? m.map_miles_width  : '';
+  document.getElementById('mapScaleLabel').value = m.map_scale_label || '';
+  document.getElementById('mapMilesWidth').value = m.map_miles_width != null ? m.map_miles_width : '';
   document.getElementById('mapMilesPerDay').value = m.travel_miles_per_day != null ? m.travel_miles_per_day : 24;
   document.getElementById('mapHoursPerDay').value = m.travel_hours_per_day != null ? m.travel_hours_per_day : 8;
   document.getElementById('scaleMsg').style.display = 'none';
@@ -172,12 +172,12 @@ async function openSettings(id) {
 
 async function loadGroupShareLinks(mapId) {
   try {
-    const r    = await fetch(`/api/maps/${mapId}/data`, {
+    const r = await fetch(`/api/maps/${mapId}/data`, {
       headers: { Authorization: `Bearer ${API.token()}` }
     });
     const data = await r.json();
-    const gs   = data.groups || [];
-    const el   = document.getElementById('groupShareLinks');
+    const gs = data.groups || [];
+    const el = document.getElementById('groupShareLinks');
     if (!gs.length) { el.innerHTML = '<p class="hint">Noch keine Gruppen angelegt.</p>'; return; }
     el.innerHTML = gs.map(g => `
       <div style="margin-bottom:.8rem">
@@ -190,7 +190,7 @@ async function loadGroupShareLinks(mapId) {
           <button class="btn btn-primary btn-sm" onclick="copyUrl('gsl${g.id}')">Kopieren</button>
         </div>
       </div>`).join('');
-  } catch {}
+  } catch { }
 }
 
 function copyUrl(inputId) {
@@ -209,13 +209,47 @@ async function downloadBackup() {
     });
     if (!res.ok) throw new Error('Backup fehlgeschlagen');
     const blob = await res.blob();
-    const cd   = res.headers.get('Content-Disposition') || '';
+    const cd = res.headers.get('Content-Disposition') || '';
     const name = cd.match(/filename="([^"]+)"/)?.[1] || 'backup.json';
-    const a    = document.createElement('a');
+    const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name; a.click();
     URL.revokeObjectURL(a.href);
     showToast('Backup heruntergeladen', 'success');
   } catch (e) { showToast(e.message, 'error'); }
+}
+
+// Backup Upload
+async function handleRestore(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  if (!confirm("Möchtest du das Backup wirklich einspielen? Bestehende Daten werden überschrieben!")) {
+    input.value = '';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('backup', file);
+
+  try {
+    const res = await fetch(`/api/maps/${settingsMapId}/restore`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${API.token()}` },
+      body: formData // Wichtig: Bei FormData keinen Content-Type Header manuell setzen!
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'Restore fehlgeschlagen');
+    }
+
+    showToast('Backup erfolgreich eingespielt. Seite wird neu geladen...', 'success');
+    setTimeout(() => location.reload(), 2000);
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    input.value = ''; // Input zurücksetzen
+  }
 }
 
 // Save scale & travel settings
@@ -224,10 +258,10 @@ async function saveMapScale() {
   if (!m) return;
   try {
     await API.put(`/api/maps/${settingsMapId}`, {
-      name:                 m.name,
-      description:          m.description || '',
-      map_scale_label:      document.getElementById('mapScaleLabel').value.trim() || null,
-      map_miles_width:      parseFloat(document.getElementById('mapMilesWidth').value) || null,
+      name: m.name,
+      description: m.description || '',
+      map_scale_label: document.getElementById('mapScaleLabel').value.trim() || null,
+      map_miles_width: parseFloat(document.getElementById('mapMilesWidth').value) || null,
       travel_miles_per_day: parseFloat(document.getElementById('mapMilesPerDay').value) || 24,
       travel_hours_per_day: parseFloat(document.getElementById('mapHoursPerDay').value) || 8
     });
@@ -244,7 +278,7 @@ async function uploadImage() {
   if (!file) return;
   const prog = document.getElementById('uploadProgress');
   const fill = document.getElementById('progressFill');
-  const txt  = document.getElementById('progressText');
+  const txt = document.getElementById('progressText');
   prog.classList.remove('hidden');
   try {
     const result = await API.upload(
@@ -272,16 +306,16 @@ async function loadEditors(mapId) {
         <div class="admin-row">
           <span>👤 ${escHtml(a.username)}</span>
           ${a.id !== mapOwnerId
-            ? `<button class="btn btn-danger btn-sm" onclick="removeAdmin(${mapId},${a.id})">Entfernen</button>`
-            : '<span style="color:var(--text-dim);font-size:12px">Eigentümer</span>'}
+          ? `<button class="btn btn-danger btn-sm" onclick="removeAdmin(${mapId},${a.id})">Entfernen</button>`
+          : '<span style="color:var(--text-dim);font-size:12px">Eigentümer</span>'}
         </div>`).join('') || '<p style="color:var(--text-dim);font-size:13px">Keine weiteren Admins</p>';
 
     const adminIds = new Set(admins.map(a => a.id));
-    const sel      = document.getElementById('addEditorSelect');
-    sel.innerHTML  = '<option value="">Benutzer wählen…</option>' +
+    const sel = document.getElementById('addEditorSelect');
+    sel.innerHTML = '<option value="">Benutzer wählen…</option>' +
       users.filter(u => !adminIds.has(u.id) && u.id !== mapOwnerId)
-           .map(u => `<option value="${u.id}">${escHtml(u.username)}</option>`).join('');
-  } catch {}
+        .map(u => `<option value="${u.id}">${escHtml(u.username)}</option>`).join('');
+  } catch { }
 }
 
 async function addEditor() {
@@ -327,23 +361,23 @@ async function loadUsers() {
           <span>
             👤 ${escHtml(u.username)}
             ${u.is_superadmin
-              ? '<strong style="font-size:11px;color:var(--primary-h);margin-left:.3rem">(Super-Admin)</strong>'
-              : ''}
+          ? '<strong style="font-size:11px;color:var(--primary-h);margin-left:.3rem">(Super-Admin)</strong>'
+          : ''}
           </span>
           <div style="display:flex;gap:.4rem">
             ${/* Super-Admin darf fremde PW via Admin-Weg setzen, aber NICHT sein eigenes
                  (er würde sonst die Bestätigung des alten Passworts umgehen) */
-              u.id !== ME.id || !u.is_superadmin
-                ? `<button class="btn btn-ghost btn-sm"
+        u.id !== ME.id || !u.is_superadmin
+          ? `<button class="btn btn-ghost btn-sm"
                      onclick="openAdminPwModal(${u.id},'${escAttr(u.username)}')">🔒 PW</button>`
-                : ''}
+          : ''}
             ${!u.is_superadmin
-              ? `<button class="btn btn-danger btn-sm"
+          ? `<button class="btn btn-danger btn-sm"
                    onclick="deleteUser(${u.id},'${escAttr(u.username)}')">🗑</button>`
-              : ''}
+          : ''}
           </div>
         </div>`).join('') || '<p style="color:var(--text-dim)">Keine Benutzer</p>';
-  } catch {}
+  } catch { }
 }
 
 async function deleteUser(id, name) {
@@ -368,8 +402,8 @@ document.getElementById('createUserForm').addEventListener('submit', async e => 
 
 // ── Change own password ──────────────────────────────────────────────────
 function openChangePasswordModal() {
-  document.getElementById('curPw').value  = '';
-  document.getElementById('newPw').value  = '';
+  document.getElementById('curPw').value = '';
+  document.getElementById('newPw').value = '';
   document.getElementById('newPw2').value = '';
   document.getElementById('changePwErr').classList.add('hidden');
   openModal('changePwModal');
@@ -378,7 +412,7 @@ function openChangePasswordModal() {
 document.getElementById('changePwForm').addEventListener('submit', async e => {
   e.preventDefault();
   const cur = document.getElementById('curPw').value;
-  const nw  = document.getElementById('newPw').value;
+  const nw = document.getElementById('newPw').value;
   const nw2 = document.getElementById('newPw2').value;
   const err = document.getElementById('changePwErr');
   err.classList.add('hidden');
@@ -413,7 +447,7 @@ function openAdminPwModal(userId, username) {
 document.getElementById('adminPwForm').addEventListener('submit', async e => {
   e.preventDefault();
   const uid = document.getElementById('adminPwUserId').value;
-  const pw  = document.getElementById('adminNewPw').value;
+  const pw = document.getElementById('adminNewPw').value;
   const err = document.getElementById('adminPwErr');
   err.classList.add('hidden');
   try {
@@ -465,7 +499,7 @@ function renderIconsList() {
 
   // Group: global first, then own
   const global = allIcons.filter(i => !i.owner_id);
-  const own    = allIcons.filter(i =>  i.owner_id);
+  const own = allIcons.filter(i => i.owner_id);
 
   let html = '';
   if (global.length) {
@@ -486,7 +520,7 @@ function iconRow(icon, readOnly) {
     </div>
     <div class="icon-manage-info">
       <span class="icon-manage-name">${iconDisplayName(icon)}</span>
-      <span class="icon-manage-url" title="${escHtml(icon.image_url)}">${escHtml(icon.image_url.length > 45 ? icon.image_url.slice(0,45)+'…' : icon.image_url)}</span>
+      <span class="icon-manage-url" title="${escHtml(icon.image_url)}">${escHtml(icon.image_url.length > 45 ? icon.image_url.slice(0, 45) + '…' : icon.image_url)}</span>
     </div>
     <div style="display:flex;gap:.3rem;flex-shrink:0">
       ${readOnly ? '' : `<button class="btn btn-ghost btn-sm" onclick="editIcon(${icon.id})">✏️</button>
@@ -497,19 +531,19 @@ function iconRow(icon, readOnly) {
 
 async function createIcon() {
   const name = document.getElementById('newIconName').value.trim();
-  const url  = document.getElementById('newIconUrl').value.trim();
+  const url = document.getElementById('newIconUrl').value.trim();
   if (!name || !url) { showToast('Name und Emoji/URL erforderlich', 'error'); return; }
   try {
     await API.post('/api/icons', { name, image_url: url });
     document.getElementById('newIconName').value = '';
-    document.getElementById('newIconUrl').value  = '';
+    document.getElementById('newIconUrl').value = '';
     document.getElementById('newIconPreview').innerHTML = '';
     await loadIcons();
     showToast('Icon hinzugefügt', 'success');
   } catch (e) { showToast(e.message, 'error'); }
 }
 
-document.getElementById('newIconUrl')?.addEventListener('input', function() {
+document.getElementById('newIconUrl')?.addEventListener('input', function () {
   const v = this.value.trim();
   const prev = document.getElementById('newIconPreview');
   if (!prev) return;
@@ -524,7 +558,7 @@ document.getElementById('newIconUrl')?.addEventListener('input', function() {
 function editIcon(id) {
   const icon = allIcons.find(x => x.id === id);
   if (!icon) return;
-  const row  = document.getElementById('icon-row-' + id);
+  const row = document.getElementById('icon-row-' + id);
   const dname = ME.is_superadmin ? icon.name : icon.name.replace(new RegExp('^' + ME.username + '_'), '');
   row.innerHTML = `
     <div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;background:var(--border);border-radius:4px;flex-shrink:0">
@@ -542,7 +576,7 @@ function editIcon(id) {
 
 async function saveIcon(id) {
   const name = document.getElementById('edit-name-' + id)?.value.trim();
-  const url  = document.getElementById('edit-url-'  + id)?.value.trim();
+  const url = document.getElementById('edit-url-' + id)?.value.trim();
   if (!name || !url) return;
   try {
     await API.put(`/api/icons/${id}`, { name, image_url: url });
@@ -570,17 +604,17 @@ async function loadMapStats() {
       const el = document.getElementById(`stats-${m.id}`);
       if (!el) continue;
       const parts = [];
-      if (stats.viewers  > 0) parts.push(`👁 ${stats.viewers} Betrachter`);
-      if (stats.editors  > 0) parts.push(`✏ ${stats.editors} Editor(en)`);
-      if (stats.fileSize)     parts.push(formatBytes(stats.fileSize));
+      if (stats.viewers > 0) parts.push(`👁 ${stats.viewers} Betrachter`);
+      if (stats.editors > 0) parts.push(`✏ ${stats.editors} Editor(en)`);
+      if (stats.fileSize) parts.push(formatBytes(stats.fileSize));
       el.textContent = parts.join(' · ');
-    } catch {}
+    } catch { }
   }
 }
 
 function formatBytes(b) {
-  if (b > 1048576) return (b/1048576).toFixed(1) + ' MB';
-  if (b > 1024)    return (b/1024).toFixed(0) + ' KB';
+  if (b > 1048576) return (b / 1048576).toFixed(1) + ' MB';
+  if (b > 1024) return (b / 1024).toFixed(0) + ' KB';
   return b + ' B';
 }
 
@@ -588,7 +622,7 @@ function formatBytes(b) {
 
 // ── Changelog ─────────────────────────────────────────────────────────────
 let _changelogQuill = null;
-let _changelogHtml  = '';
+let _changelogHtml = '';
 
 async function openChangelog() {
   // Load from server
@@ -627,8 +661,8 @@ function startChangelogEdit() {
       theme: 'snow',
       modules: {
         toolbar: [
-          [{ header: [1,2,3,false] }],
-          ['bold','italic','underline'],
+          [{ header: [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline'],
           [{ list: 'ordered' }, { list: 'bullet' }],
           ['link'],
           ['clean']
@@ -694,14 +728,14 @@ function renderAuditRows(rows) {
   tbody.innerHTML = rows.map(r => {
     const dt = new Date(r.created_at).toLocaleString('de');
     const actionCls = r.action.startsWith('DELETE') ? 'color:#fca5a5'
-                    : r.action.startsWith('LOGIN')   ? 'color:#86efac'
-                    : '';
+      : r.action.startsWith('LOGIN') ? 'color:#86efac'
+        : '';
     return `<tr>
       <td style="white-space:nowrap;color:var(--text-dim)">${dt}</td>
-      <td><strong>${escHtml(r.username||'')}</strong></td>
-      <td style="font-family:monospace;font-size:11px;color:var(--text-dim)">${escHtml(r.ip||'')}</td>
-      <td><span style="font-size:11px;font-family:monospace;${actionCls}">${escHtml(r.action||'')}</span></td>
-      <td style="color:var(--text-dim)">${escHtml(r.detail||'')}</td>
+      <td><strong>${escHtml(r.username || '')}</strong></td>
+      <td style="font-family:monospace;font-size:11px;color:var(--text-dim)">${escHtml(r.ip || '')}</td>
+      <td><span style="font-size:11px;font-family:monospace;${actionCls}">${escHtml(r.action || '')}</span></td>
+      <td style="color:var(--text-dim)">${escHtml(r.detail || '')}</td>
     </tr>`;
   }).join('');
 }
@@ -709,7 +743,7 @@ function renderAuditRows(rows) {
 function renderAuditPager(total, offset) {
   const pager = document.getElementById('auditPager');
   if (!pager) return;
-  const page  = Math.floor(offset / AUDIT_LIMIT) + 1;
+  const page = Math.floor(offset / AUDIT_LIMIT) + 1;
   const pages = Math.ceil(total / AUDIT_LIMIT);
   pager.innerHTML = `
     <button class="btn btn-ghost btn-sm" onclick="loadAuditLog(${Math.max(0, offset - AUDIT_LIMIT)})"
@@ -723,14 +757,14 @@ async function exportAuditCsv() {
   try {
     const d = await API.get('/api/audit-log?limit=10000&offset=0');
     const header = 'Zeit,Benutzer,IP,Aktion,Detail';
-    const rows   = d.rows.map(r =>
+    const rows = d.rows.map(r =>
       [r.created_at, r.username, r.ip, r.action, r.detail]
-      .map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(',')
+        .map(v => '"' + String(v || '').replace(/"/g, '""') + '"').join(',')
     );
     const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'audit_log_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.download = 'audit_log_' + new Date().toISOString().slice(0, 10) + '.csv';
     a.click(); URL.revokeObjectURL(a.href);
   } catch (e) { showToast(e.message, 'error'); }
 }

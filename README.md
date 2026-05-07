@@ -1,6 +1,7 @@
 # 🗺️ WorldMap v2 – Kartenbetrachter
 
 Selbst gehosteter, dynamischer Karten-Viewer für eigene Welten.
+Mit viel Hilfe von KI (Gemini und Claude Code erstellt)
 
 ## 🚀 Starten
 

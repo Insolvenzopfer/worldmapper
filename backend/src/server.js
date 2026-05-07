@@ -1,31 +1,31 @@
 const express = require('express');
-const http    = require('http');
+const http = require('http');
 const { Server } = require('socket.io');
-const { Pool }   = require('pg');
-const jwt        = require('jsonwebtoken');
-const bcrypt     = require('bcrypt');
-const multer     = require('multer');
-const crypto     = require('crypto');
-const path       = require('path');
-const sizeOf     = require('image-size');
-const cors       = require('cors');
+const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const multer = require('multer');
+const crypto = require('crypto');
+const path = require('path');
+const sizeOf = require('image-size');
+const cors = require('cors');
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
-const io     = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, { cors: { origin: '*' } });
 
-const PORT       = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
-const pool       = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-const CHARS    = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+const CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
 const genToken = (len = 8) =>
   Array.from(crypto.randomBytes(len)).map(b => CHARS[b % CHARS.length]).join('');
 
-const str  = (v, max = 255) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
-const num  = (v, def = 0)   => (isFinite(+v) ? +v : def);
-const bool = (v)             => v === true || v === 'true';
-const arr  = (v)             => Array.isArray(v) ? v : [];
+const str = (v, max = 255) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const num = (v, def = 0) => (isFinite(+v) ? +v : def);
+const bool = (v) => v === true || v === 'true';
+const arr = (v) => Array.isArray(v) ? v : [];
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -36,6 +36,9 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => cb(null, `${crypto.randomUUID()}${path.extname(file.originalname)}`)
 });
 const upload = multer({ storage, limits: { fileSize: 100 * 1024 * 1024 } });
+
+// FÜGE DIESE ZEILE HINZU:
+const memoryUpload = multer({ storage: multer.memoryStorage() });
 
 const auth = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -181,11 +184,11 @@ app.put('/api/maps/:id', auth, async (req, res) => {
     `UPDATE maps SET name=$1,description=$2,map_scale_label=$3,map_miles_width=$4,
      travel_miles_per_day=$5,travel_hours_per_day=$6 WHERE id=$7 RETURNING *`,
     [str(name), str(description, 1000),
-     map_scale_label ? str(map_scale_label, 255) : null,
-     map_miles_width != null ? +map_miles_width : null,
-     travel_miles_per_day != null ? +travel_miles_per_day : 24,
-     travel_hours_per_day != null ? +travel_hours_per_day : 8,
-     +req.params.id]);
+    map_scale_label ? str(map_scale_label, 255) : null,
+    map_miles_width != null ? +map_miles_width : null,
+    travel_miles_per_day != null ? +travel_miles_per_day : 24,
+    travel_hours_per_day != null ? +travel_hours_per_day : 8,
+    +req.params.id]);
   emit(+req.params.id, 'map:updated', r.rows[0]);
   res.json(r.rows[0]);
 });
@@ -205,14 +208,14 @@ app.post('/api/maps/:id/image', auth, upload.single('image'), async (req, res) =
   try {
     const d = sizeOf(`/app/uploads/${req.file.filename}`);
     w = d.width; h = d.height;
-  } catch {}
+  } catch { }
 
   // Convert to WebP + generate thumbnail using sharp if available
   let finalPath = imagePath, finalThumb = null;
   try {
     const sharp = require('sharp');
-    const base     = req.file.filename.replace(/\.[^.]+$/, '');
-    const webpName  = base + '.webp';
+    const base = req.file.filename.replace(/\.[^.]+$/, '');
+    const webpName = base + '.webp';
     const thumbName = 'thumb_' + base + '.webp';
 
     // Convert full image to WebP
@@ -227,13 +230,13 @@ app.post('/api/maps/:id/image', auth, upload.single('image'), async (req, res) =
       .toFile(`/app/uploads/${thumbName}`);
 
     // Re-read dimensions from WebP
-    try { const d2 = sizeOf(`/app/uploads/${webpName}`); w = d2.width; h = d2.height; } catch {}
+    try { const d2 = sizeOf(`/app/uploads/${webpName}`); w = d2.width; h = d2.height; } catch { }
 
     // Remove original if different filename
     if (webpName !== req.file.filename) {
-      try { require('fs').unlinkSync(`/app/uploads/${req.file.filename}`); } catch {}
+      try { require('fs').unlinkSync(`/app/uploads/${req.file.filename}`); } catch { }
     }
-    finalPath  = `/uploads/${webpName}`;
+    finalPath = `/uploads/${webpName}`;
     finalThumb = `/uploads/${thumbName}`;
   } catch { /* sharp not available – skip */ }
 
@@ -258,7 +261,7 @@ app.get('/api/maps/:id/data', async (req, res) => {
       try {
         const u = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
         isAdmin = await canManage(u.id, mapId);
-      } catch {}
+      } catch { }
     }
 
     if (!isAdmin) {
@@ -300,15 +303,15 @@ app.get('/api/maps/:id/data', async (req, res) => {
       ? groups.rows.filter(g => g.id === limitToGroupId)
       : (isAdmin ? groups.rows : groups.rows.filter(g => g.visible));
 
-    const filteredPois    = filterVis(pois.rows);
-    const filteredRoutes  = routes.rows.filter(r => {
+    const filteredPois = filterVis(pois.rows);
+    const filteredRoutes = routes.rows.filter(r => {
       if (isAdmin) return true;
       if (r.visibility === 'hidden') return false;
       if (r.visibility === 'public') return true;  // global routes always visible
       return limitToGroupId === null || r.group_id === limitToGroupId;
     });
-    const routeIds        = new Set(filteredRoutes.map(r => r.id));
-    const filteredFog     = limitToGroupId !== null
+    const routeIds = new Set(filteredRoutes.map(r => r.id));
+    const filteredFog = limitToGroupId !== null
       ? fog.rows.filter(f => f.group_id === limitToGroupId) : fog.rows;
 
     res.json({
@@ -339,9 +342,120 @@ app.get('/api/maps/:id/backup', auth, async (req, res) => {
   const safeName = (map.rows[0]?.name || 'map').replace(/[^a-z0-9]/gi, '_');
   const date = new Date().toISOString().slice(0, 10);
   res.setHeader('Content-Disposition', `attachment; filename="worldmap_${safeName}_${date}.json"`);
-  res.json({ version: '2.1', exported_at: new Date().toISOString(),
+  res.json({
+    version: '2.1', exported_at: new Date().toISOString(),
     map: map.rows[0], groups: groups.rows, pois: pois.rows,
-    routes: routes.rows, waypoints: waypoints.rows, regions: regions.rows, fog_areas: fog.rows });
+    routes: routes.rows, waypoints: waypoints.rows, regions: regions.rows, fog_areas: fog.rows
+  });
+});
+
+// Backup-restore
+app.post('/api/maps/:id/restore', auth, memoryUpload.single('backup'), async (req, res) => {
+  const mid = +req.params.id;
+
+  if (!(await canManage(req.user.id, mid))) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'Keine Datei empfangen.' });
+  }
+
+  const client = await pool.connect();
+  try {
+    const data = JSON.parse(req.file.buffer.toString());
+    await client.query('BEGIN');
+
+    // 1. Bestehende Daten löschen (Reihenfolge wegen Foreign Keys!)
+    await client.query('DELETE FROM fog_areas WHERE map_id = $1', [mid]);
+    await client.query('DELETE FROM regions WHERE map_id = $1', [mid]);
+    await client.query('DELETE FROM route_waypoints WHERE route_id IN (SELECT id FROM routes WHERE map_id = $1)', [mid]);
+    await client.query('DELETE FROM routes WHERE map_id = $1', [mid]);
+    await client.query('DELETE FROM pois WHERE map_id = $1', [mid]);
+    await client.query('DELETE FROM groups WHERE map_id = $1', [mid]);
+
+    // 2. Map-Metadaten (Anpassung an init.sql: kein 'config'-Feld)
+    if (data.map) {
+      await client.query(
+        `UPDATE maps SET name=$1, description=$2, map_scale_label=$3, map_miles_width=$4, 
+         travel_miles_per_day=$5, travel_hours_per_day=$6 WHERE id=$7`,
+        [
+          str(data.map.name), str(data.map.description, 1000),
+          data.map.map_scale_label, data.map.map_miles_width,
+          data.map.travel_miles_per_day || 24, data.map.travel_hours_per_day || 8, mid
+        ]
+      );
+    }
+
+    // 3. Gruppen (mit JSONB für external_links)
+    for (const g of data.groups) {
+      await client.query(
+        `INSERT INTO groups (id, map_id, name, color, visible, fog_of_war_enabled, order_index, external_links, share_token) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [g.id, mid, str(g.name), g.color, bool(g.visible), bool(g.fog_of_war_enabled), g.order_index, JSON.stringify(g.external_links || []), g.share_token]
+      );
+    }
+
+    // 4. POIs (lat/lng statt x/y laut init.sql)
+    for (const p of data.pois) {
+      await client.query(
+        `INSERT INTO pois (id, map_id, group_id, name, description, lat, lng, icon, color, bg_transparent, links, visibility) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+        [p.id, mid, p.group_id, str(p.name), str(p.description), num(p.lat), num(p.lng), p.icon, p.color, !!p.bg_transparent, JSON.stringify(p.links || []), p.visibility]
+      );
+    }
+
+    // 5. Routes
+    for (const r of data.routes) {
+      await client.query(
+        `INSERT INTO routes (id, map_id, group_id, name, description, color, weight, line_style, smooth, visibility) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [r.id, mid, r.group_id, str(r.name), str(r.description), r.color, r.weight, r.line_style, bool(r.smooth), r.visibility]
+      );
+    }
+
+    // 6. Waypoints (lat/lng statt x/y)
+    for (const w of data.waypoints) {
+      await client.query(
+        `INSERT INTO route_waypoints (id, route_id, lat, lng, title, info, order_index) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [w.id, w.route_id, num(w.lat), num(w.lng), str(w.title), str(w.info), w.order_index]
+      );
+    }
+
+    // 7. Regions (coordinates statt path)
+    for (const reg of data.regions) {
+      await client.query(
+        `INSERT INTO regions (id, map_id, group_id, name, description, coordinates, color, fill_opacity, stroke_opacity, visibility) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [reg.id, mid, reg.group_id, str(reg.name), str(reg.description), JSON.stringify(reg.coordinates || []), reg.color, reg.fill_opacity, reg.stroke_opacity, reg.visibility]
+      );
+    }
+
+    // 8. Fog Areas (coordinates statt path)
+    for (const f of data.fog_areas) {
+      await client.query(
+        `INSERT INTO fog_areas (id, map_id, group_id, name, coordinates) VALUES ($1, $2, $3, $4, $5)`,
+        [f.id, mid, f.group_id, str(f.name), JSON.stringify(f.coordinates || [])]
+      );
+    }
+
+    // 9. SEQUENZEN UPDATEN (Damit IDs nach dem Import weiterlaufen)
+    const tables = ['groups', 'pois', 'routes', 'route_waypoints', 'regions', 'fog_areas'];
+    for (const table of tables) {
+      await client.query(`SELECT setval(pg_get_serial_sequence('${table}', 'id'), COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`);
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Restore erfolgreich' });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Restore Error:', err);
+    res.status(500).json({ error: 'Fehler beim Einspielen des Backups: ' + err.message });
+  } finally {
+    client.release();
+  }
 });
 
 // Map admins
@@ -375,7 +489,7 @@ app.post('/api/maps/:mid/groups', auth, async (req, res) => {
   const r = await pool.query(
     'INSERT INTO groups (map_id,name,color,fog_of_war_enabled,external_links,share_token) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *',
     [mid, str(name), str(color || '#3b82f6', 50), bool(fog_of_war_enabled),
-     JSON.stringify(arr(external_links)), genToken()]);
+      JSON.stringify(arr(external_links)), genToken()]);
   emit(mid, 'group:created', r.rows[0]);
   res.json(r.rows[0]);
 });
@@ -387,7 +501,7 @@ app.put('/api/maps/:mid/groups/:id', auth, async (req, res) => {
   const r = await pool.query(
     'UPDATE groups SET name=$1,color=$2,visible=$3,fog_of_war_enabled=$4,external_links=$5 WHERE id=$6 AND map_id=$7 RETURNING *',
     [str(name), str(color || '#3b82f6', 50), bool(visible !== false),
-     bool(fog_of_war_enabled), JSON.stringify(arr(external_links)), +req.params.id, mid]);
+    bool(fog_of_war_enabled), JSON.stringify(arr(external_links)), +req.params.id, mid]);
   emit(mid, 'group:updated', r.rows[0]);
   res.json(r.rows[0]);
 });
@@ -401,7 +515,7 @@ app.delete('/api/maps/:mid/groups/:id', auth, async (req, res) => {
 });
 
 // ── POIS ───────────────────────────────────────────────────────────────
-const visCheck = v => ['public','group','hidden'].includes(v) ? v : 'group';
+const visCheck = v => ['public', 'group', 'hidden'].includes(v) ? v : 'group';
 
 app.post('/api/maps/:mid/pois', auth, async (req, res) => {
   const mid = +req.params.mid;
@@ -411,8 +525,8 @@ app.post('/api/maps/:mid/pois', auth, async (req, res) => {
     `INSERT INTO pois (map_id,group_id,name,description,lat,lng,icon,color,links,visibility,bg_transparent)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *`,
     [mid, group_id ? +group_id : null, str(name), str(description, 2000),
-     num(lat), num(lng), str(icon || 'circle', 50), str(color || '#3b82f6', 50),
-     JSON.stringify(arr(links)), visCheck(visibility), !!bg_transparent]);
+      num(lat), num(lng), str(icon || 'circle', 50), str(color || '#3b82f6', 50),
+      JSON.stringify(arr(links)), visCheck(visibility), !!bg_transparent]);
   await auditLog(req, 'CREATE_POI', `POI '${req.body.name}' in Karte ${req.params.mid}`);
   emit(mid, 'poi:created', r.rows[0]);
   res.json(r.rows[0]);
@@ -426,8 +540,8 @@ app.put('/api/maps/:mid/pois/:id', auth, async (req, res) => {
     `UPDATE pois SET group_id=$1,name=$2,description=$3,lat=$4,lng=$5,icon=$6,color=$7,links=$8,visibility=$9,bg_transparent=$10
      WHERE id=$11 AND map_id=$12 RETURNING *`,
     [group_id ? +group_id : null, str(name), str(description, 2000),
-     num(lat), num(lng), str(icon || 'circle', 50), str(color || '#3b82f6', 50),
-     JSON.stringify(arr(links)), visCheck(visibility), !!bg_transparent, +req.params.id, mid]);
+    num(lat), num(lng), str(icon || 'circle', 50), str(color || '#3b82f6', 50),
+    JSON.stringify(arr(links)), visCheck(visibility), !!bg_transparent, +req.params.id, mid]);
   emit(mid, 'poi:updated', r.rows[0]);
   res.json(r.rows[0]);
 });
@@ -447,15 +561,15 @@ app.post('/api/maps/:mid/routes', auth, async (req, res) => {
   if (!(await canManage(req.user.id, mid))) return res.status(403).json({ error: 'Forbidden' });
   const { group_id, name, description, color, weight, line_style, smooth, visibility } = req.body;
   if (!str(name)) return res.status(400).json({ error: 'Name erforderlich' });
-  const vis = ['public','group','hidden'].includes(visibility) ? visibility : 'group';
+  const vis = ['public', 'group', 'hidden'].includes(visibility) ? visibility : 'group';
   const gid = (vis === 'group' && group_id) ? +group_id : null;
   const r = await pool.query(
     `INSERT INTO routes (map_id,group_id,name,description,color,weight,line_style,smooth,visibility)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
     [mid, gid, str(name), str(description, 2000),
-     str(color || '#ef4444', 50), num(weight, 3),
-     ['solid','dashed','dotted'].includes(line_style) ? line_style : 'solid',
-     bool(smooth !== false), vis]);
+      str(color || '#ef4444', 50), num(weight, 3),
+      ['solid', 'dashed', 'dotted'].includes(line_style) ? line_style : 'solid',
+      bool(smooth !== false), vis]);
   emit(mid, 'route:created', { ...r.rows[0], waypoints: [] });
   res.json(r.rows[0]);
 });
@@ -464,15 +578,15 @@ app.put('/api/maps/:mid/routes/:id', auth, async (req, res) => {
   const mid = +req.params.mid;
   if (!(await canManage(req.user.id, mid))) return res.status(403).json({ error: 'Forbidden' });
   const { group_id, name, description, color, weight, line_style, smooth, visibility } = req.body;
-  const vis = ['public','group','hidden'].includes(visibility) ? visibility : 'group';
+  const vis = ['public', 'group', 'hidden'].includes(visibility) ? visibility : 'group';
   const gid = (vis === 'group' && group_id) ? +group_id : null;
   const r = await pool.query(
     `UPDATE routes SET group_id=$1,name=$2,description=$3,color=$4,weight=$5,line_style=$6,smooth=$7,visibility=$8
      WHERE id=$9 AND map_id=$10 RETURNING *`,
     [gid, str(name), str(description, 2000),
-     str(color || '#ef4444', 50), num(weight, 3),
-     ['solid','dashed','dotted'].includes(line_style) ? line_style : 'solid',
-     bool(smooth !== false), vis, +req.params.id, mid]);
+      str(color || '#ef4444', 50), num(weight, 3),
+      ['solid', 'dashed', 'dotted'].includes(line_style) ? line_style : 'solid',
+      bool(smooth !== false), vis, +req.params.id, mid]);
   const wps = await pool.query('SELECT * FROM route_waypoints WHERE route_id=$1 ORDER BY order_index,id', [+req.params.id]);
   emit(mid, 'route:updated', { ...r.rows[0], waypoints: wps.rows });
   res.json(r.rows[0]);
@@ -574,8 +688,8 @@ app.post('/api/maps/:mid/regions', auth, async (req, res) => {
     `INSERT INTO regions (map_id,group_id,name,description,coordinates,color,fill_opacity,stroke_opacity,visibility)
      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
     [mid, group_id ? +group_id : null, str(name), str(description, 2000),
-     JSON.stringify(arr(coordinates)), str(color || '#22c55e', 50),
-     num(fill_opacity, 0.2), num(stroke_opacity, 0.8), visCheck(visibility)]);
+      JSON.stringify(arr(coordinates)), str(color || '#22c55e', 50),
+      num(fill_opacity, 0.2), num(stroke_opacity, 0.8), visCheck(visibility)]);
   emit(mid, 'region:created', r.rows[0]);
   res.json(r.rows[0]);
 });
@@ -588,9 +702,9 @@ app.put('/api/maps/:mid/regions/:id', auth, async (req, res) => {
     `UPDATE regions SET group_id=$1,name=$2,description=$3,coordinates=$4,color=$5,fill_opacity=$6,stroke_opacity=$7,visibility=$8
      WHERE id=$9 AND map_id=$10 RETURNING *`,
     [group_id ? +group_id : null, str(name), str(description, 2000),
-     JSON.stringify(arr(coordinates)), str(color || '#22c55e', 50),
-     num(fill_opacity, 0.2), num(stroke_opacity, 0.8), visCheck(visibility),
-     +req.params.id, mid]);
+    JSON.stringify(arr(coordinates)), str(color || '#22c55e', 50),
+    num(fill_opacity, 0.2), num(stroke_opacity, 0.8), visCheck(visibility),
+    +req.params.id, mid]);
   emit(mid, 'region:updated', r.rows[0]);
   res.json(r.rows[0]);
 });
@@ -654,7 +768,7 @@ async function getRoomSize(mapId) {
 io.on('connection', socket => {
   socket.on('join:map', async ({ mapId, isEditor }) => {
     socket.join(`map:${mapId}`);
-    socket._mapId    = mapId;
+    socket._mapId = mapId;
     socket._isEditor = !!isEditor;
     const count = await getRoomSize(mapId);
     io.to(`map:${mapId}`).emit('viewers:update', { count });
@@ -695,12 +809,12 @@ app.get('/api/maps/:id/stats', async (req, res) => {
         const fp = '/app' + m.image_path;
         const st = fs.statSync(fp);
         fileSize = st.size;
-      } catch {}
+      } catch { }
     }
     // Socket room viewer count
     const sockets = await io.in(`map:${mid}`).fetchSockets();
-    const editors  = sockets.filter(s => s._isEditor).length;
-    const viewers  = sockets.filter(s => !s._isEditor).length;
+    const editors = sockets.filter(s => s._isEditor).length;
+    const viewers = sockets.filter(s => !s._isEditor).length;
     res.json({ viewers, editors, fileSize });
   } catch (e) { res.json({ viewers: 0, editors: 0, fileSize: null }); }
 });
@@ -752,7 +866,7 @@ app.post('/api/icons', auth, async (req, res) => {
   const { name, image_url, sort_order } = req.body;
   if (!str(name) || !str(image_url)) return res.status(400).json({ error: 'Name und URL erforderlich' });
   // Superadmin: global (owner_id=NULL), others: scoped to their user
-  const ownerId    = req.user.is_superadmin ? null : req.user.id;
+  const ownerId = req.user.is_superadmin ? null : req.user.id;
   const storedName = req.user.is_superadmin
     ? str(name, 255)
     : str(req.user.username + '_' + name, 255);
@@ -789,7 +903,7 @@ app.delete('/api/icons/:id', auth, async (req, res) => {
 // Logs to PostgreSQL audit_log table; X-Forwarded-For for Traefik-behind setups
 async function auditLog(req, action, detail = '') {
   const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
-           || req.socket?.remoteAddress || 'unknown';
+    || req.socket?.remoteAddress || 'unknown';
   const username = req.user?.username || 'anonymous';
   try {
     await pool.query(
@@ -830,14 +944,14 @@ app.get('/api/audit-log', auth, async (req, res) => {
   let rows, total;
   if (search.trim()) {
     const s = `%${search.trim()}%`;
-    rows  = (await pool.query(
+    rows = (await pool.query(
       `SELECT * FROM audit_log WHERE username ILIKE $1 OR action ILIKE $1 OR detail ILIKE $1 OR ip ILIKE $1
        ORDER BY created_at DESC LIMIT $2 OFFSET $3`, [s, lim, off])).rows;
     total = +(await pool.query(
       `SELECT COUNT(*) FROM audit_log WHERE username ILIKE $1 OR action ILIKE $1 OR detail ILIKE $1 OR ip ILIKE $1`, [s]
     )).rows[0].count;
   } else {
-    rows  = (await pool.query('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT $1 OFFSET $2', [lim, off])).rows;
+    rows = (await pool.query('SELECT * FROM audit_log ORDER BY created_at DESC LIMIT $1 OFFSET $2', [lim, off])).rows;
     total = +(await pool.query('SELECT COUNT(*) FROM audit_log')).rows[0].count;
   }
   res.json({ rows, total });
@@ -847,7 +961,7 @@ app.get('/api/audit-log', auth, async (req, res) => {
 const waitForDB = async () => {
   for (let i = 0; i < 30; i++) {
     try { await pool.query('SELECT 1'); console.log('✓ DB connected'); return; }
-    catch { console.log(`  DB not ready (${i+1}/30)…`); await new Promise(r => setTimeout(r, 2000)); }
+    catch { console.log(`  DB not ready (${i + 1}/30)…`); await new Promise(r => setTimeout(r, 2000)); }
   }
   throw new Error('Database timeout');
 };
