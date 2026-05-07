@@ -497,19 +497,36 @@ function renderIconsList() {
     return;
   }
 
-  // Group: global first, then own
+  // 1. Globale Icons (owner_id ist NULL)
   const global = allIcons.filter(i => !i.owner_id);
-  const own = allIcons.filter(i => i.owner_id);
+
+  // 2. Eigene Icons (gehören dem aktuell eingeloggten User ME.id)
+  const own = allIcons.filter(i => i.owner_id === ME.id);
+
+  // 3. Icons von anderen (nur für Super-Admins sichtbar)
+  const others = allIcons.filter(i => i.owner_id !== null && i.owner_id !== ME.id);
 
   let html = '';
+
+  // Globale Icons anzeigen (für alle)
   if (global.length) {
     html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:.3rem">Globale Icons (Admin)</div>`;
+    // Nur Super-Admin darf globale Icons bearbeiten
     html += global.map(icon => iconRow(icon, !ME.is_superadmin)).join('');
   }
+
+  // Eigene Icons anzeigen
   if (own.length) {
     html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin:.6rem 0 .3rem">Meine Icons</div>`;
     html += own.map(icon => iconRow(icon, false)).join('');
   }
+
+  // Icons von anderen Usern (NUR für Super-Admin sichtbar)
+  if (ME.is_superadmin && others.length) {
+    html += `<div style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin:.6rem 0 .3rem">Icons anderer User (Admin-Ansicht)</div>`;
+    html += others.map(icon => iconRow(icon, false)).join('');
+  }
+
   el.innerHTML = html;
 }
 

@@ -878,16 +878,38 @@ app.post('/api/icons', auth, async (req, res) => {
 
 app.put('/api/icons/:id', auth, async (req, res) => {
   const { name, image_url, sort_order } = req.body;
-  // Only owner or superadmin can edit
-  const icon = (await pool.query('SELECT * FROM custom_poi_icons WHERE id=$1', [+req.params.id])).rows[0];
+  const iconId = +req.params.id;
+
+  const iconRes = await pool.query('SELECT * FROM custom_poi_icons WHERE id=$1', [iconId]);
+  const icon = iconRes.rows[0];
+
   if (!icon) return res.status(404).json({ error: 'Not found' });
-  if (!req.user.is_superadmin && icon.owner_id !== req.user.id) return res.status(403).json({ error: 'Forbidden' });
-  const storedName = (req.user.is_superadmin && !icon.owner_id)
-    ? str(name, 255)
-    : str(req.user.username + '_' + name, 255);
+
+  // Berechtigung prüfen: Admin darf alles, User nur eigene
+  if (!req.user.is_superadmin && icon.owner_id !== req.user.id) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  let storedName;
+  if (icon.owner_id === null) {
+    // Globales Icon bleibt global (nur Admin kommt hierhin)
+    storedName = str(name, 255);
+  } else {
+    // User-Icon: Wir müssen den richtigen Präfix finden. 
+    // Wenn ein Admin editiert, nutzen wir den Namen des ursprünglichen Besitzers.
+    // Dazu müssten wir den Owner-Namen laden, ODER wir behalten die Logik bei:
+    const ownerRes = await pool.query('SELECT username FROM users WHERE id=$1', [icon.owner_id]);
+    const ownerName = ownerRes.rows[0]?.username || 'user';
+
+    // Falls der Name schon den Präfix hat, nicht doppelt hinzufügen
+    const prefix = ownerName + '_';
+    storedName = name.startsWith(prefix) ? str(name, 255) : str(prefix + name, 255);
+  }
+
   const r = await pool.query(
     'UPDATE custom_poi_icons SET name=$1, image_url=$2, sort_order=$3 WHERE id=$4 RETURNING *',
-    [storedName, str(image_url, 1000), num(sort_order, 0), +req.params.id]);
+    [storedName, str(image_url, 1000), num(sort_order, 0), iconId]
+  );
   res.json(r.rows[0]);
 });
 
