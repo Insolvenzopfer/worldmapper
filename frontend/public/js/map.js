@@ -2473,7 +2473,7 @@ function _renderRegionLabels() {
       const center = e.poly.getBounds().getCenter();
 
       const lbl = L.divIcon({
-        html: `<div class="reg-name-label" style="width:${_REG_LABEL_W}px;height:${_REG_LABEL_H}px">
+        html: `<div class="reg-name-label" style="width:${_REG_LABEL_W}px;height:${_REG_LABEL_H}px;">
           <img src="${_REG_LABEL_URL}" style="width:100%;height:100%;position:absolute;top:0;left:0">
           <span class="reg-name-text">${escHtml(region.name)}</span>
         </div>`,
