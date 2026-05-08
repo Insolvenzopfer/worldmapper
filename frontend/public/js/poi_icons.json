@@ -24,8 +24,10 @@
       "mosque": "🕌",
       "shintoshrine": "⛩️",
       "portal": "🌀",
+      "wings": "🪽",
       "magic": "🔮",
       "alembic": "⚗️",
+      "study": "🎓",
       "fairy": "🧚",
       "unicorn": "🦄",
       "phoenix": "🐦‍🔥",
@@ -42,27 +44,34 @@
     "label": "Natur & Landschaft",
     "icons": {
       "map": "🗺️",
+      "kompass": "🧭",
       "mountain": "🏔️",
       "snowmountain": "🗻",
       "vulkan": "🌋",
       "rock": "🪨",
-      "island": "🏝️",
       "cave": "🕳️",
+      "island": "🏝️",
+      "palm": "🌴",
       "forest": "🌲",
       "deciduoustree": "🌳",
       "leaflesstree": "🪾",
       "wood": "🪵",
       "flower": "🌹",
       "bouquet": "💐",
+      "sunflower": "🌻",
       "cactus": "🌵",
       "mushroom": "🍄",
       "brownmushroom": "🍄‍🟫",
       "wave": "🌊",
+      "wind": "💨",
+      "cloude": "☁️",
+      "rain": "🌧️",
       "rainbow": "🌈",
       "fire": "🔥",
       "voltage": "⚡",
       "leaf_brown": "🍂",
-      "leaf_green": "🍃"
+      "leaf_green": "🍃",
+      "brain": "🧠"
     }
   },
   "maritime": {
@@ -98,8 +107,8 @@
       "snake": "🐍",
       "crocodile": "🐊",
       "spider": "🕷",
-      "radioactive": "☢",
-      "biohazard": "☣"
+      "radioactive": "☢️",
+      "biohazard": "☣️"
     }
   },
   "economy": {
@@ -152,13 +161,15 @@
       "chipmunk": "🐿️",
       "beaver": "🦫",
       "bat": "🦇",
-      "mouse": "🐁"
+      "mouse": "🐁",
+      "butterfly": "🦋"
     }
   },
   "birds": {
     "label": "Vögel",
     "icons": {
       "feather": "🪶",
+      "egg": "🥚",
       "eagle": "🦅",
       "dove": "🕊️",
       "parrot": "🦜",
@@ -182,15 +193,21 @@
       "greenapple": "🍏",
       "peach": "🍑",
       "trauben": "🍇",
+      "strawberry": "🍓",
       "coconut": "🥥",
       "bread": "🍞",
       "pancakes": "🥞",
       "cheese": "🧀",
       "meat": "🍗",
+      "bigmeat": "🍖",
+      "steak": "🥩",
+      "bacon": "🥓",
       "honey": "🍯",
       "pie": "🥧",
       "cookie": "🍪",
+      "cake": "🍰",
       "lollipop": "🍭",
+      "popcorn": "🍿",
       "food": "🍲",
       "drink": "🫖",
       "amphora": "🏺"
@@ -201,6 +218,9 @@
     "icons": {
       "quest": "📜",
       "book": "📖",
+      "writenote": "📝",
+      "newspaper": "🗞️",
+      "mirror": "🪞",
       "note": "📌",
       "pushpin": "📍",
       "pencil": "✏️",
@@ -222,6 +242,9 @@
   "music": {
     "label": "Musik",
     "icons": {
+      "ticketred": "🎟️",
+      "ticketyellow": "🎫",
+      "musicnote": "𝄞",
       "horn": "📯",
       "violin": "🎻",
       "benjo": "🪕",

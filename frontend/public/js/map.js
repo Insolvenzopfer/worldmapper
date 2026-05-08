@@ -2043,7 +2043,7 @@ function initQuill(containerId, initialHtml) {
           ['bold', 'italic', 'underline'],
           [{ list: 'ordered' }, { list: 'bullet' }],
           ['link'],
-          [{ 'customImg': '🖼' }],
+          [{ 'customImg': '🖼️' }],
           ['clean']
         ],
         handlers: {
@@ -2456,22 +2456,21 @@ const _REG_LABEL_H = Math.round(210 * 222 / 616);
 
 function _renderRegionLabels() {
   _regLabelGroup.clearLayers();
+  
   mapData.regions.forEach(region => {
     if (region.visibility === 'hidden' && !isAdmin) return;
+    
     const e = regionLayers[region.id];
     if (!e || !e.poly) return;
+    
+    // Bestimmen, ob die Ebene gerade sichtbar ist
     const lay = e.bucket === PUB ? globalLayers.regionLayer : e.bucket === HID ? hiddenLayers.regionLayer : layerState[e.groupId]?.regionLayer;
     if (!lay || !leafletMap.hasLayer(lay)) return;
 
     try {
-      const coords = Array.isArray(region.coordinates) ? region.coordinates
-        : JSON.parse(region.coordinates || '[]');
-      if (!coords.length) return;
-      // Compute centroid
-      const lats = coords.map(p => Array.isArray(p) ? +p[0] : +p.lat);
-      const lngs = coords.map(p => Array.isArray(p) ? +p[1] : +p.lng);
-      const lat = lats.reduce((a, b) => a + b, 0) / lats.length;
-      const lng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+      // NUTZUNG DER LEAFLET BOUNDS FÜR DIE MITTE
+      // getBounds().getCenter() ignoriert die Punkte-Dichte und nimmt die geometrische Mitte des Polygons
+      const center = e.poly.getBounds().getCenter();
 
       const lbl = L.divIcon({
         html: `<div class="reg-name-label" style="width:${_REG_LABEL_W}px;height:${_REG_LABEL_H}px">
@@ -2482,13 +2481,19 @@ function _renderRegionLabels() {
         iconAnchor: [_REG_LABEL_W / 2, _REG_LABEL_H / 2],
         className: ''
       });
-      L.marker([lat, lng], { icon: lbl, interactive: false })
-        .addTo(_regLabelGroup);
-    } catch { }
-  });
-  if (!leafletMap.hasLayer(_regLabelGroup)) _regLabelGroup.addTo(leafletMap);
-}
 
+      L.marker(center, { icon: lbl, interactive: false })
+        .addTo(_regLabelGroup);
+        
+    } catch (err) {
+      console.warn("Fehler beim Erstellen des Labels für Region:", region.name, err);
+    }
+  });
+
+  if (!leafletMap.hasLayer(_regLabelGroup)) {
+    _regLabelGroup.addTo(leafletMap);
+  }
+}
 function _removeRegionLabels() {
   _regLabelGroup.clearLayers();
   leafletMap.removeLayer(_regLabelGroup);
