@@ -429,14 +429,28 @@ app.post('/api/maps/:id/restore', auth, memoryUpload.single('backup'), async (re
     await client.query('DELETE FROM groups WHERE map_id = $1', [mid]);
 
     // 2. Map-Metadaten (Anpassung an init.sql: kein 'config'-Feld)
+// 2. Map-Metadaten (Inklusive default_settings)
     if (data.map) {
       await client.query(
-        `UPDATE maps SET name=$1, description=$2, map_scale_label=$3, map_miles_width=$4, 
-         travel_miles_per_day=$5, travel_hours_per_day=$6 WHERE id=$7`,
+        `UPDATE maps SET 
+          name=$1, 
+          description=$2, 
+          map_scale_label=$3, 
+          map_miles_width=$4, 
+          travel_miles_per_day=$5, 
+          travel_hours_per_day=$6,
+          default_settings=$7 
+         WHERE id=$8`,
         [
-          str(data.map.name), str(data.map.description, 1000),
-          data.map.map_scale_label, data.map.map_miles_width,
-          data.map.travel_miles_per_day || 24, data.map.travel_hours_per_day || 8, mid
+          str(data.map.name), 
+          str(data.map.description, 1000),
+          data.map.map_scale_label, 
+          data.map.map_miles_width,
+          data.map.travel_miles_per_day || 24, 
+          data.map.travel_hours_per_day || 8,
+          // Wenn default_settings im Backup existiert, als JSON speichern, sonst null
+          data.map.default_settings ? JSON.stringify(data.map.default_settings) : null,
+          mid
         ]
       );
     }

@@ -124,6 +124,47 @@ async function init() {
     if (!r.ok) throw new Error(mapData.error);
   } catch (e) { alert(`Fehler: ${e.message}`); return; }
 
+  try {
+    const r = await fetch(`/api/maps/${mapId}/data`, { headers });
+    mapData = await r.json();
+    if (!r.ok) throw new Error(mapData.error);
+    
+    // --- NEU: Default Settings anwenden ---
+    const ds = mapData.map.default_settings || {};
+    
+    if (ds.region_label_width) {
+      _REG_LABEL_W = parseInt(ds.region_label_width);
+      _REG_LABEL_H = Math.round(_REG_LABEL_W * 222 / 616);
+    }
+    
+    if (ds.poi_size) _DEFAULT_POI_SIZE = ds.poi_size;
+    
+    // Schriftart global laden (fügt ein Style-Element in den Head ein)
+    if (ds.label_font) {
+      _DEFAULT_LABEL_FONT = ds.label_font.split('.')[0]; // Dateiname ohne .ttf
+      const fontFace = `
+        @font-face {
+          font-family: "${_DEFAULT_LABEL_FONT}";
+          src: url("/css/fonts/${ds.label_font}");
+        }
+        .region-label-text, .poi-label-text { font-family: "${_DEFAULT_LABEL_FONT}", sans-serif !important; }
+      `;
+      const style = document.createElement('style');
+      style.textContent = fontFace;
+      document.head.appendChild(style);
+    }
+
+    _poiMarkerSize = ds.poi_size || 30; // Globalen Wert für die Marker setzen
+    
+    // Nebel Deckkraft (falls vorhanden)
+    if (ds.fog_opacity !== undefined) {
+      // In map.js heißt die Variable oft _fogDensity oder ähnlich
+      _fogDensity = ds.fog_opacity / 100;
+    }
+    // ---------------------------------------
+
+  } catch (e) { alert(`Fehler: ${e.message}`); return; }
+
   isAdmin = mapData.is_admin;
   limitGroupId = mapData.limit_group_id;
 
@@ -2451,8 +2492,10 @@ const _REG_LABEL_URL = 'https://www.9ps.eu/dnd/items/Worldmapper/label_region.we
 // Image is 616x222px; usable text area: x 115-508, y 31-153
 // Text area size: 393 x 122 px  →  ratio ~3.21:1
 // We scale the label to ~210px wide on screen
-const _REG_LABEL_W = 210;
-const _REG_LABEL_H = Math.round(210 * 222 / 616);
+// Vorher: const _REG_LABEL_W = 210;
+// Neu: Wir lassen die Basis-Werte als Fallback bestehen
+let _currentRegLabelW = 210; 
+let _currentRegLabelH = Math.round(210 * 222 / 616);
 
 function _renderRegionLabels() {
   _regLabelGroup.clearLayers();
@@ -2562,6 +2605,12 @@ function initSettingsMenu() {
   const panel = document.getElementById('settingsPanel');
   if (!btn || !panel) return;
 
+  const ds = mapData.map.default_settings || {};
+  
+  const minSize = ds.poi_min_size || 25;
+  const maxSize = ds.poi_max_size || 80; // Dein neues Max aus dem Dashboard
+  const currentSize = _poiMarkerSize; // Aktuell eingestellte Größe  
+
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
     panel.classList.toggle('hidden');
@@ -2588,7 +2637,7 @@ function initSettingsMenu() {
 
       <div class="settings-row" style="flex-direction:column;align-items:flex-start;gap:.2rem">
         <label class="settings-label">POI-Größe: <span id="poiSizeVal">${_poiMarkerSize}px</span></label>
-        <input type="range" min="25" max="60" step="1" value="${_poiMarkerSize}"
+        <input type="range" min="${minSize}" max="${maxSize}" step="1" value="${_poiMarkerSize}"
           style="width:100%" oninput="setPoiSize(+this.value)">
       </div>
 
