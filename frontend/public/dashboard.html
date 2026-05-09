@@ -76,13 +76,93 @@
         <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
       </div>
       <div class="settings-tabs">
-        <button class="tab-btn active" data-tab="image">🖼 Bild</button>
+        <button class="tab-btn active" data-tab="general">🏠 Allgemein</button> 
+        <button class="tab-btn" data-tab="image">🖼 Bild</button>
         <button class="tab-btn" data-tab="share">🔗 Teilen</button>
         <button class="tab-btn" data-tab="editors">👥 Editoren</button>
         <button class="tab-btn" data-tab="backup">💾 Backup</button>
       </div>
       <input type="hidden" id="settingsMapId">
+<div class="tab-content active" id="tab-general">
+  <div class="form-group">
+    <label>Kartenname *</label>
+    <input type="text" id="setMapName" required>
+  </div>
+  <div class="form-group">
+    <label>Beschreibung</label>
+    <textarea id="setMapDesc" rows="3"></textarea>
+  </div>
+  
+  <hr style="margin:1.5rem 0; border:0; border-top:1px solid var(--border)">
+  <p style="font-weight:600; margin-bottom:1rem">🛠 Standardwerte für die Karte</p>
+  
+  <div class="form-group">
+    <label>Nebelfüllung in % für Editoren: <span id="val-fog">70</span>%</label>
+    <input type="range" id="defFogOpacity" min="0" max="100" oninput="document.getElementById('val-fog').textContent=this.value">
+  </div>
 
+  <div class="form-row">
+    <div class="form-group">
+      <label>Standardschrift</label>
+      <select id="defFontMain"></select>
+    </div>
+    <div class="form-group">
+      <label>POI Label Farbe</label>
+      <input type="color" id="defPoiColor" oninput="updateFontPreview()">
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>POI Label Vorschau (Größe in px)</label>
+    <div style="display:flex; gap:10px; align-items:center">
+        <input type="number" id="defPoiLabelSize" value="22" style="width:80px" oninput="updateFontPreview()">
+        <div id="fontPreview" style="padding:10px; border:1px solid var(--border); border-radius:4px; flex-grow:1">Vorschautext</div>
+    </div>
+  </div>
+
+<div class="form-group" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
+  <label style="margin-bottom: 10px; display: block; font-weight: bold;">POI Größen-Konfiguration (px)</label>
+  
+  <div style="display: flex; flex-direction: column; gap: 10px;">
+    <div style="display: grid; grid-template-columns: 100px 1fr 40px; align-items: center; gap: 10px;">
+      <label>Minimum</label>
+      <input type="range" id="defPoiMin" min="25" max="100" oninput="updatePoiSliders('min')">
+      <span id="val-poiMin">25</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 100px 1fr 40px; align-items: center; gap: 10px;">
+      <label>Standard</label>
+      <input type="range" id="defPoiSize" min="25" max="150" oninput="updatePoiSliders('size')">
+      <span id="val-poiSize">30</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 100px 1fr 40px; align-items: center; gap: 10px;">
+      <label>Maximum</label>
+      <input type="range" id="defPoiMax" min="50" max="150" oninput="updatePoiSliders('max')">
+      <span id="val-poiMax">80</span>
+    </div>
+  </div>
+</div>
+
+<div class="form-row" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
+    <div class="form-group">
+        <label>SVG Border</label>
+        <input type="color" id="defPoiBorder" style="width: 100%; height: 38px;">
+    </div>
+    <div class="form-group">
+        <label>Ping (Sek)</label>
+        <input type="number" id="defPingDur">
+    </div>
+    <div class="form-group">
+        <label>Region (px)</label>
+        <input type="number" id="defRegionWidth">
+    </div>
+</div>
+
+  <div class="modal-footer">
+    <button class="btn btn-primary" onclick="saveGeneralSettings()">Einstellungen speichern</button>
+  </div>
+</div>
       <div class="tab-content active" id="tab-image">
         <p class="hint">Kartenbild hochladen (PNG / JPG / WebP, max. 100 MB). Die Bildgröße bestimmt das
           Koordinatensystem.</p>

@@ -69,7 +69,6 @@ function renderMaps() {
         <div class="map-card-actions">
           <a href="/map.html?id=${m.id}" class="btn btn-primary btn-sm">🗺️ Öffnen</a>
           <button class="btn btn-ghost btn-sm" onclick="openSettings(${m.id})">⚙️ Einstellungen</button>
-          <button class="btn btn-ghost btn-sm" onclick="editMap(${m.id})">✏️</button>
           ${locked && ME.is_superadmin
         ? `<button class="btn btn-ghost btn-sm" style="color:#fca5a5" onclick="forceUnlockMap(${m.id})" title="Sperre aufheben">🔓</button>`
         : ''}
@@ -80,13 +79,30 @@ function renderMaps() {
   }).join('');
 }
 
-// Create
-document.getElementById('createMapBtn').addEventListener('click', () => {
-  document.getElementById('mapId').value = '';
-  document.getElementById('mapName').value = '';
-  document.getElementById('mapDesc').value = '';
-  document.getElementById('mapModalTitle').textContent = 'Neue Karte erstellen';
-  openModal('mapModal');
+// Create - Ersetzt den alten Block
+document.getElementById('createMapBtn').addEventListener('click', async () => {
+  const name = prompt("Name der neuen Karte:");
+  // Wenn abgebrochen wird oder der Name leer ist, nichts tun
+  if (!name || name.trim() === "") return;
+
+  try {
+    // 1. Karte mit Minimaldaten im Backend anlegen
+    const newMap = await API.post('/api/maps', { 
+      name: name.trim(), 
+      description: '' 
+    });
+
+    // 2. Kartenliste im Dashboard aktualisieren, damit die neue Karte erscheint
+    await loadMaps();
+
+    // 3. Sofort die neuen Einstellungen öffnen, um Standardwerte anzupassen
+    openSettings(newMap.id);
+    
+    showToast('Karte erfolgreich erstellt', 'success');
+  } catch (e) {
+    console.error(e);
+    showToast('Fehler beim Erstellen der Karte: ' + e.message, 'error');
+  }
 });
 
 // Edit
@@ -138,8 +154,42 @@ let settingsMapId = null;
 async function openSettings(id) {
   settingsMapId = id;
   const m = allMaps.find(x => x.id === id);
+  await loadFontList(); // Schriften laden
+
+  document.getElementById('setMapName').value = m.name;
+  document.getElementById('setMapDesc').value = m.description || '';
+  
+  // JSON Standardwerte laden
+  const ds = m.default_settings || {};
+  document.getElementById('defFogOpacity').value = ds.fog_opacity ?? 70;
+  document.getElementById('val-fog').textContent = ds.fog_opacity ?? 70;
+  document.getElementById('defFontMain').value = ds.label_font || '';
+  document.getElementById('defPoiLabelSize').value = parseInt(ds.poi_label_size) || 22;
+  document.getElementById('defPoiColor').value = ds.poi_label_color || '#e2e8f0';
+
+  document.getElementById('defPoiBorder').value = ds.poi_border_color || '#bcbcbc';
+  document.getElementById('defPingDur').value = ds.ping_duration || 5;
+  document.getElementById('defRegionWidth').value = parseInt(ds.region_label_width) || 210;
+
+  updateFontPreview();
+
   document.getElementById('settingsTitle').textContent = `⚙️ ${m.name}`;
   document.getElementById('settingsMapId').value = id;
+
+// --- NEU/KORRIGIERT: POI REGELR POSITIONIEREN ---
+  const minVal = ds.poi_min_size || 25;
+  const sizeVal = ds.poi_size || 30;
+  const maxVal = ds.poi_max_size || 80;
+
+  // 1. Schieberegler auf die richtigen Positionen setzen
+  document.getElementById('defPoiMin').value = minVal;
+  document.getElementById('defPoiSize').value = sizeVal;
+  document.getElementById('defPoiMax').value = maxVal;
+
+  // 2. Die Zahlen-Anzeige daneben aktualisieren
+  document.getElementById('val-poiMin').textContent = minVal;
+  document.getElementById('val-poiSize').textContent = sizeVal;
+  document.getElementById('val-poiMax').textContent = maxVal;
 
   // Image preview
   const prev = document.getElementById('currentImagePreview');
@@ -168,6 +218,81 @@ async function openSettings(id) {
   // Load in background
   loadGroupShareLinks(id);
   loadEditors(id);
+}
+
+function updatePoiSliders(source) {
+  const minEl = document.getElementById('defPoiMin');
+  const sizeEl = document.getElementById('defPoiSize');
+  const maxEl = document.getElementById('defPoiMax');
+
+  let minV = parseInt(minEl.value);
+  let sizeV = parseInt(sizeEl.value);
+  let maxV = parseInt(maxEl.value);
+
+  // LOGIK-KETTE
+  if (source === 'max') {
+    // Wenn Max kleiner als Standard wird -> schiebe Standard mit
+    if (maxV < sizeV) {
+      sizeEl.value = maxV;
+      sizeV = maxV; // Wert für die nächste Prüfung aktualisieren
+    }
+    // Wenn der (neue) Standardwert kleiner als Min wird -> schiebe Min mit
+    if (sizeV < minV) {
+      minEl.value = sizeV;
+    }
+  }
+
+  if (source === 'size') {
+    if (sizeV < minV) minEl.value = sizeV;
+    if (sizeV > maxV) maxEl.value = sizeV;
+  }
+
+  if (source === 'min') {
+    if (minV > sizeV) {
+      sizeEl.value = minV;
+      sizeV = minV;
+    }
+    if (sizeV > maxV) {
+      maxEl.value = sizeV;
+    }
+  }
+
+  // Anzeige-Texte aktualisieren
+  document.getElementById('val-poiMin').textContent = minEl.value;
+  document.getElementById('val-poiSize').textContent = sizeEl.value;
+  document.getElementById('val-poiMax').textContent = maxEl.value;
+  
+  if(typeof updateFontPreview === 'function') updateFontPreview();
+}
+
+async function saveGeneralSettings() {
+    // Sammeln der Daten aus den neuen Feldern
+    const ds = {
+        label_font: document.getElementById('defFontMain').value,
+        fog_opacity: parseInt(document.getElementById('defFogOpacity').value),
+        poi_label_size: document.getElementById('defPoiLabelSize').value + 'px',
+        poi_label_color: document.getElementById('defPoiColor').value,
+        region_label_width: document.getElementById('defRegionWidth').value + 'px',
+        poi_size: parseInt(document.getElementById('defPoiSize').value),
+        poi_min_size: parseInt(document.getElementById('defPoiMin').value),
+        poi_max_size: parseInt(document.getElementById('defPoiMax').value),
+        poi_border_color: document.getElementById('defPoiBorder').value,
+        ping_duration: parseInt(document.getElementById('defPingDur').value)
+    };
+
+    console.log("Sende folgende Einstellungen:", ds); // Zum Testen in der Web-Konsole
+
+    try {
+        await API.put(`/api/maps/${settingsMapId}`, {
+            name: document.getElementById('setMapName').value,
+            description: document.getElementById('setMapDesc').value,
+            default_settings: ds // Dieses Feld muss im Body sein
+        });
+        showToast('Einstellungen gespeichert', 'success');
+        loadMaps(); // Dashboard neu laden
+    } catch(e) { 
+        showToast(e.message, 'error'); 
+    }
 }
 
 async function loadGroupShareLinks(mapId) {
@@ -290,6 +415,46 @@ async function uploadImage() {
     showToast('Bild hochgeladen!', 'success');
   } catch (e) { showToast(e.message, 'error'); }
   finally { prog.classList.add('hidden'); }
+}
+
+// ── Fonts ──────────────────────────────────────────────────────────────
+
+async function loadFontList() {
+    try {
+        const fonts = await API.get('/api/fonts');
+        const sel = document.getElementById('defFontMain');
+        sel.innerHTML = fonts.map(f => `<option value="${f}">${f.replace(/\.(ttf|otf)$/i, '')}</option>`).join('');
+        sel.addEventListener('change', updateFontPreview);
+    } catch(e) { console.error("Fonts konnten nicht geladen werden"); }
+}
+
+function updateFontPreview() {
+    const p = document.getElementById('fontPreview');
+    const fontFile = document.getElementById('defFontMain').value;
+    if (!fontFile) return;
+
+    const size = document.getElementById('defPoiLabelSize').value;
+    const color = document.getElementById('defPoiColor').value;
+    
+    // Die Schriftart-Familie ist der Dateiname ohne Endung
+    const fontName = fontFile.split('.')[0];
+
+    // Dynamisch @font-face hinzufügen, falls noch nicht geschehen
+    if (!document.getElementById('style-' + fontName)) {
+        const newStyle = document.createElement('style');
+        newStyle.id = 'style-' + fontName;
+        newStyle.textContent = `
+            @font-face {
+                font-family: "${fontName}";
+                src: url("/css/fonts/${fontFile}");
+            }
+        `;
+        document.head.appendChild(newStyle);
+    }
+
+    p.style.fontFamily = `"${fontName}"`;
+    p.style.fontSize = size + 'px';
+    p.style.color = color;
 }
 
 // ── Admins ──────────────────────────────────────────────────────────────

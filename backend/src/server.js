@@ -101,6 +101,36 @@ app.get('/api/auth/me', auth, async (req, res) => {
   res.json(r.rows[0]);
 });
 
+// ── FONTS ──────────────────────────────────────────────────────────────
+const fs = require('fs'); // Sicherstellen, dass fs importiert ist
+
+// Finde den ersten Pfad, der wirklich existiert
+const FONT_PATH = '/app/frontend/public/css/fonts';
+
+// Statische Auslieferung
+app.use('/css/fonts', express.static(FONT_PATH));
+
+app.get('/api/fonts', auth, (req, res) => {
+  console.log("Versuche Fonts zu lesen aus:", FONT_PATH);
+  
+  if (!fs.existsSync(FONT_PATH)) {
+    console.error("Font-Ordner existiert nicht!");
+    return res.json([]);
+  }
+  
+  try {
+    const files = fs.readdirSync(FONT_PATH);
+    const fonts = files.filter(f => {
+      const low = f.toLowerCase();
+      return low.endsWith('.ttf') || low.endsWith('.otf');
+    });
+    res.json(fonts);
+  } catch (err) {
+    console.error("Fehler beim Lesen des Verzeichnisses:", err);
+    res.status(500).json({ error: "Fehler beim Lesen der Schriften" });
+  }
+});
+
 // ── USERS ──────────────────────────────────────────────────────────────
 app.get('/api/users', auth, async (req, res) => {
   if (!req.user.is_superadmin) return res.status(403).json({ error: 'Forbidden' });
@@ -179,18 +209,42 @@ app.post('/api/maps', auth, async (req, res) => {
 
 app.put('/api/maps/:id', auth, async (req, res) => {
   if (!(await canManage(req.user.id, +req.params.id))) return res.status(403).json({ error: 'Forbidden' });
-  const { name, description, map_scale_label, map_miles_width, travel_miles_per_day, travel_hours_per_day } = req.body;
-  const r = await pool.query(
-    `UPDATE maps SET name=$1,description=$2,map_scale_label=$3,map_miles_width=$4,
-     travel_miles_per_day=$5,travel_hours_per_day=$6 WHERE id=$7 RETURNING *`,
-    [str(name), str(description, 1000),
-    map_scale_label ? str(map_scale_label, 255) : null,
-    map_miles_width != null ? +map_miles_width : null,
-    travel_miles_per_day != null ? +travel_miles_per_day : 24,
-    travel_hours_per_day != null ? +travel_hours_per_day : 8,
-    +req.params.id]);
-  emit(+req.params.id, 'map:updated', r.rows[0]);
-  res.json(r.rows[0]);
+
+  // 1. Hier muss default_settings mit aufgenommen werden
+  const { 
+    name, description, map_scale_label, map_miles_width, 
+    travel_miles_per_day, travel_hours_per_day, default_settings 
+  } = req.body;
+
+  try {
+    const r = await pool.query(
+      `UPDATE maps SET 
+        name=$1, 
+        description=$2, 
+        map_scale_label=$3, 
+        map_miles_width=$4,
+        travel_miles_per_day=$5, 
+        travel_hours_per_day=$6, 
+        default_settings=$7 
+       WHERE id=$8 RETURNING *`,
+      [
+        str(name), 
+        str(description, 1000),
+        map_scale_label ? str(map_scale_label, 255) : null,
+        map_miles_width != null ? +map_miles_width : null,
+        travel_miles_per_day != null ? +travel_miles_per_day : 24,
+        travel_hours_per_day != null ? +travel_hours_per_day : 8,
+        default_settings ? JSON.stringify(default_settings) : null, // WICHTIG: Als String für Postgres
+        +req.params.id
+      ]
+    );
+    
+    emit(+req.params.id, 'map:updated', r.rows[0]);
+    res.json(r.rows[0]);
+  } catch (err) {
+    console.error("Fehler beim Speichern der Map:", err);
+    res.status(500).json({ error: 'Speicherfehler' });
+  }
 });
 
 app.delete('/api/maps/:id', auth, async (req, res) => {

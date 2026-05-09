@@ -31,6 +31,7 @@ services:
     volumes:
       - uploads:/app/uploads
       - ./backend/src:/app/src
+      - ./frontend/public/css/fonts:/app/frontend/public/css/fonts:ro # ro = read only
 
   frontend:
     build: ./frontend
