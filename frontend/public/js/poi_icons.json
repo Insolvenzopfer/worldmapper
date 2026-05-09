@@ -80,6 +80,7 @@
       "port": "⚓",
       "canoe": "🛶",
       "pirat": "🏴‍☠️",
+      "shell": "🐚",
       "merperson": "🧜",
       "whale": "🐳",
       "dolphin": "🐬",
@@ -128,6 +129,7 @@
       "basket": "🧺",
       "ladder": "🪜",
       "key": "🗝️",
+      "lock": "🔒",
       "present": "🎁",
       "painting": "🖼️"
     }
@@ -223,6 +225,7 @@
       "mirror": "🪞",
       "note": "📌",
       "pushpin": "📍",
+      "flag": "🚩",
       "pencil": "✏️",
       "telescope": "🔭",
       "candle": "🕯️",
@@ -261,6 +264,7 @@
       "star_bright": "🌟",
       "broom": "🧹",
       "soap": "🧼",
+      "bubbles": "🫧",
       "placard": "🪧",
       "teddybear": "🧸"
     }

@@ -306,7 +306,7 @@ async function loadEditors(mapId) {
         <div class="admin-row">
           <span>👤 ${escHtml(a.username)}</span>
           ${a.id !== mapOwnerId
-          ? `<button class="btn btn-danger btn-sm" onclick="removeAdmin(${mapId},${a.id})">Entfernen</button>`
+          ? `<button class="btn btn-danger btn-sm" onclick="removeEditor(${mapId},${a.id})">Entfernen</button>`
           : '<span style="color:var(--text-dim);font-size:12px">Eigentümer</span>'}
         </div>`).join('') || '<p style="color:var(--text-dim);font-size:13px">Keine weiteren Admins</p>';
 

@@ -28,6 +28,19 @@ CREATE TABLE maps (
   created_at            TIMESTAMPTZ DEFAULT NOW()
 );
 
+ALTER TABLE maps ADD COLUMN default_settings JSONB DEFAULT '{
+  "label_font": "MorrisRoman-Black",
+  "fog_opacity": 70,
+  "poi_label_size": "22px",
+  "poi_label_color": "#e2e8f0",
+  "region_label_width": "210px",
+  "poi_size": 30,
+  "poi_min_size": 25,
+  "poi_max_size": 80,
+  "poi_border_color": "#bcbcbc",
+  "ping_duration": 5
+}'::jsonb;
+
 CREATE TABLE map_admins (
   map_id  INTEGER REFERENCES maps(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
