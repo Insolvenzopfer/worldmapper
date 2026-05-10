@@ -680,10 +680,57 @@ label {
   background: var(--bg2)
 }
 
+/* Den äußeren Leaflet-Content-Container anpassen */
+.leaflet-popup-content {
+    margin: 13px 19px; /* Standard Leaflet-Abstände beibehalten */
+    line-height: 1.4;
+}
+
+/* Dein spezieller Inhalts-Container */
+.popup-content {
+    max-height: 400px;    /* Maximale Höhe (anpassen nach Bedarf) */
+    max-width: 350px;     /* Verhindert, dass die Box zu breit wird */
+    overflow-y: auto;     /* Aktiviert vertikales Scrollen */
+    overflow-x: hidden;    /* Verhindert horizontales Scrollen */
+    padding: 10px 5px;
+}
+
+/* Optional: Den Scrollbalken etwas schöner/schmaler machen (Webkit-Browser) */
+.popup-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.popup-content::-webkit-scrollbar-thumb {
+    background: var(--primary); /* Nutzt deine Hauptfarbe */
+    border-radius: 10px;
+}
+
+.popup-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Überschriften in Popups fixieren (optional) */
 .popup-content h4 {
-  font-size: .88rem;
-  font-weight: 600;
-  margin-bottom: .32rem
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    
+    /* Zentrierung */
+    text-align: center;
+    
+    /* Hintergrund & Farbe */
+    background: var(--primary); /* Oder eine dunkle Farbe wie #333 */
+    color: white;               /* Textfarbe an den Hintergrund anpassen */
+    
+    /* Abstände & Ränder */
+    margin: -10px -5px 15px -5px; /* Negativer Margin gleicht Padding der Box aus */
+    padding: 10px 5px;
+    
+    /* Runde Ecken */
+    border-radius: 6px;
+    
+    /* Optional: Ein leichter Schatten, damit es sich beim Scrollen vom Text abhebt */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
 }
 
 .popup-content p {
@@ -1707,10 +1754,10 @@ label {
     text-align: center;
     /* Berechnung der nutzbaren Fläche (ca. 63% Breite, 55% Höhe) */
     width: 63%; 
-    height: 55%;
+    height: 50%;
     /* Verschiebung zum Zentrum des Textbereichs im Bild */
     margin-left: 1%; 
-    margin-top: -1%;
+    margin-top: -5%;
     line-height: 0.9;
     word-break: break-word;
   }

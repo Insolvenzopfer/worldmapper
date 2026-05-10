@@ -85,6 +85,9 @@ let fogBrush = null;
 let regionEditor = null;
 let regionEditorSaveFn = null;  // called on Enter when editing vertices
 
+let _mouseIsOverMap = false;
+let _lastMouseLatLng = null;
+
 const authToken = localStorage.getItem('wm_token');
 const socket = io();
 
@@ -220,6 +223,26 @@ if (ds.label_font) {
     }
   });
 
+// --- JETZT erst die Map-Listener hinzufügen, da leafletMap nun existiert ---
+  if (typeof leafletMap !== 'undefined' && leafletMap) {
+// Wenn die Maus sich bewegt, ist sie definitiv über der Karte
+    leafletMap.on('mousemove', (e) => {
+      _mouseIsOverMap = true;
+      _lastMouseLatLng = e.latlng;
+    });
+
+    // Wenn die Maus den Container verlässt
+    leafletMap.on('mouseout', () => {
+      _mouseIsOverMap = false;
+    });
+
+    // WICHTIG: Auch wenn die Maus über Overlays (Popups/Marker) geht, 
+    // soll der Status wahr bleiben.
+    leafletMap.getContainer().addEventListener('mouseenter', () => {
+      _mouseIsOverMap = true;
+    });
+  }
+
   // Load POI icon groups + custom icons FIRST
   await loadPoiIcons();
   try { _customIcons = await API.get('/api/icons'); } catch { }
@@ -283,7 +306,6 @@ function initLeaflet(map) {
   leafletMap.createPane('routesPane');
   leafletMap.getPane('routesPane').style.zIndex = 410;
 }
-let _lastMouseLatLng = null;
 
 // ── Special layers (public / hidden visibility) ────────────────────────
 function initSpecialLayers() {
@@ -1478,14 +1500,15 @@ async function startQuickAddWaypoint(routeId) {
   }
 
   enablePickMode();
-  showModeIndicator('📍 Klick auf Karte für neuen Wegpunkt · ESC abbrechen');
+  showModeIndicator('📍 Klick auf Karte: +Wegpunkt (Shift halten für mehrere) · ESC abbrechen');
 
-  // Einmaliger Click-Listener
-  leafletMap.once('click', async ev => {
-    disablePickMode();
-    hideModeIndicator();
+  // Wir definieren die Klick-Logik in einer separaten Funktion, 
+  // um sie bei gedrückter Shift-Taste wiederverwenden zu können.
+  const handlePointClick = async (ev) => {
+    // Prüfen, ob Shift gedrückt wurde (bevor wir den PickMode evtl. ganz beenden)
+    const isShiftPressed = ev.originalEvent.shiftKey;
 
-    // Nächsten Index berechnen
+    // Index berechnen (immer aktuell basierend auf den vorhandenen Wegpunkten)
     const existing = mapData.waypoints.filter(w => w.route_id === r.id);
     const nextIdx = existing.length ? Math.max(...existing.map(w => +w.order_index)) + 1 : 0;
 
@@ -1497,15 +1520,30 @@ async function startQuickAddWaypoint(routeId) {
         info: '',
         order_index: nextIdx
       });
+
+      // Visuelles Feedback: Wir refreshen die Daten, damit die neue Linie erscheint
+      if (typeof fetchMapData === 'function') await fetchMapData();
       showToast('Wegpunkt hinzugefügt', 'success');
 
-      // OPTIONAL: Falls vorhanden, Daten neu laden oder Karte refreshen
-      if (typeof fetchMapData === 'function') fetchMapData();
+      if (isShiftPressed) {
+        // Shift wird gehalten: Wir bleiben im Modus und hängen den nächsten Listener an
+        leafletMap.once('click', handlePointClick);
+      } else {
+        // Shift wurde nicht gehalten: Modus beenden
+        disablePickMode();
+        hideModeIndicator();
+      }
 
     } catch (ex) {
       showToast(ex.message, 'error');
+      // Bei Fehler Modus sicherheitshalber beenden
+      disablePickMode();
+      hideModeIndicator();
     }
-  });
+  };
+
+  // Den ersten Klick-Listener registrieren
+  leafletMap.once('click', handlePointClick);
 }
 
 function openEditRoute(id) {
@@ -1797,14 +1835,16 @@ function buildFogEditor() {
   }
   const items = fogGs.map(g => {
     const areas = (mapData.fog_areas || []).filter(a => a.group_id === g.id);
-    const areaList = areas.map((a, i) => `
-      <div class="fog-area-item"
-        onmouseenter="highlightFogArea(${a.id},${g.id})"
-        onmouseleave="unhighlightFogArea()">
-        <span class="fog-area-name">${escHtml(a.name || 'Bereich ' + (i + 1))}</span>
-        <span style="font-size:10px;color:var(--text-dim)">${_countCoords(a)} Punkte</span>
-        <button class="btn-icon" style="color:#fca5a5" onclick="deleteFogArea(${a.id},${g.id})" title="Löschen">🗑</button>
-      </div>`).join('');
+const areaList = areas.map((a, i) => `
+  <div class="fog-area-item"
+    onmouseenter="highlightFogArea(${a.id},${g.id})"
+    onmouseleave="unhighlightFogArea()">
+    <span class="fog-area-name">
+      ${escHtml(!a.name || a.name === 'Bereich' ? 'Bereich ' + (i + 1) : a.name)}
+    </span>
+    <span style="font-size:10px;color:var(--text-dim)">${_countCoords(a)} Punkte</span>
+    <button class="btn-icon" style="color:#fca5a5" onclick="deleteFogArea(${a.id},${g.id})" title="Löschen">🗑</button>
+  </div>`).join('');
     return `<div class="fog-group-block">
       <div class="fog-group-header">
         <span class="fog-group-dot" style="background:${g.color}"></span>
@@ -2266,9 +2306,10 @@ function startMeasure(mapCfg) {
   enablePickMode();
   leafletMap.getContainer().style.cursor = 'crosshair';
   leafletMap.on('click', _onMeasureClick);
-  leafletMap.on('dblclick', _onMeasureDblClick);
+  leafletMap.on('contextmenu', _onMeasureFinish);
+  //leafletMap.on('dblclick', _onMeasureDblClick);
   _showMeasurePanel('Klicke auf die Karte um zu messen…', mapCfg);
-  showModeIndicator('📏 Klick: Punkt setzen · Doppelklick: beenden · ESC: abbrechen');
+  showModeIndicator('📏 Linksklick: Punkt · Rechtsklick: Beenden · ESC: Abbruch');
 }
 
 function _onMeasureClick(e) {
@@ -2280,6 +2321,23 @@ function _onMeasureClick(e) {
 function _onMeasureDblClick(e) {
   L.DomEvent.stopPropagation(e);
   stopMeasure();
+}
+
+function _onMeasureFinish(e) {
+  // Verhindert, dass das Standard-Browser-Menü aufgeht
+  if (e.originalEvent) {
+    e.originalEvent.preventDefault();
+  }
+  
+  // Falls noch kein Punkt gesetzt wurde, einfach abbrechen
+  if (_measurePts.length < 1) {
+    stopMeasure();
+    return;
+  }
+
+  // Die Messung finalisieren (deine bisherige Logik aus _onMeasureDblClick)
+  stopMeasure();
+  showToast('Messung beendet', 'info');
 }
 
 function _redrawMeasure(mapCfg) {
@@ -2363,7 +2421,7 @@ function stopMeasure() {
   _measureLayers.forEach(l => leafletMap.removeLayer(l));
   _measureLayers = [];
   leafletMap.off('click', _onMeasureClick);
-  leafletMap.off('dblclick', _onMeasureDblClick);
+  leafletMap.off('contextmenu', _onMeasureDblClick);
   disablePickMode();
   document.getElementById('measureBtn')?.classList.remove('active-tool');
   document.getElementById('measurePanel')?.remove();
@@ -2593,7 +2651,9 @@ function _renderRegionLabels() {
               font-size: ${regSize}px; 
               color: ${regColor};
               width: 63%; 
-              height: 55%; 
+              height: 50%; 
+              margin-top: -6%;
+              margin-left: 1%;
               display: flex; 
               align-items: center; 
               justify-content: center;
@@ -2681,7 +2741,7 @@ function _manualPing(e) {
   const data = { type: 'cursor', lat, lng, moveView: isAdmin };
   socket.emit('feature:ping', data);
 }
-
+/*
 document.addEventListener('keydown', e => {
   if (e.key === 'p' || e.key === 'P') {
     if (!leafletMap || !_lastMouseLatLng) return;
@@ -2691,6 +2751,29 @@ document.addEventListener('keydown', e => {
     _manualPing({ latlng: _lastMouseLatLng });
   }
 });
+*/
+window.addEventListener('keydown', function(e) {
+  if (e.key.toLowerCase() !== 'p') return;
+
+  // Fokus-Check (Eingabefelder)
+  const activeEl = document.activeElement;
+  if (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable) {
+    return; 
+  }
+
+  // Karten-Check
+  // Wir prüfen: Ist die Maus über der Karte ODER ist das Ziel des Events die Karte selbst?
+  const isOver = _mouseIsOverMap || e.target.closest('#map') || e.target.closest('.leaflet-container');
+
+  if (!isOver || !leafletMap || !_lastMouseLatLng) {
+    return;
+  }
+
+  if (typeof _manualPing === 'function') {
+    _manualPing({ latlng: _lastMouseLatLng });
+  }
+});
+
 
 // ═══════════════════════════════════════════════════════════════════════
 // SETTINGS BURGER MENU

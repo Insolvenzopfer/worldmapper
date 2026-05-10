@@ -471,8 +471,16 @@ function updateFontPreview(type) {
     
     // Optional: Vorschau-Breite an den Regler anpassen (falls gewünscht)
     if (!isPoi) {
+        // Wir holen den Wert aus dem neuen Input-Feld "Region Breite"
         const regWidth = document.getElementById('defRegionWidth').value || 210;
-        previewContainer.style.maxWidth = regWidth + 'px';
+        
+        // Wir setzen die Breite des Containers
+        previewContainer.style.width = regWidth + 'px';
+        
+        // Da das Bild ein festes Seitenverhältnis hat (616x222), 
+        // berechnen wir die Höhe automatisch mit aspect-ratio im CSS (haben wir schon im Style)
+        // Falls dein CSS kein aspect-ratio hat, kannst du die Höhe hier auch setzen:
+        previewContainer.style.height = Math.round(regWidth * 222 / 616) + 'px';
     }
 }
 

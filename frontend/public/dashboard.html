@@ -18,7 +18,7 @@
         style="width:28px;height:28px;object-fit:contain">
       WorldMap
       <span class="version-badge" onclick="openChangelog()" style="cursor:pointer"
-        title="Changelog anzeigen">v0.8.4</span>
+        title="Changelog anzeigen">v0.8.5</span>
     </div>
     <div class="navbar-actions">
       <span id="currentUser" class="user-badge"></span>
@@ -140,14 +140,14 @@
     </div>
     <div class="form-group">
         <label>Region Breite (px)</label>
-        <input type="number" id="defRegionWidth">
+        <input type="number" id="defRegionWidth" min="0" oninput="updateFontPreview('region')">
     </div>
   </div>
 
   <div class="form-group" style="margin-top: 15px;">
     <label>Region Vorschau & Größe (px)</label>
     <div style="display:flex; gap:10px; align-items:center">
-        <input type="number" id="defRegionLabelSize" value="32" style="width:80px" oninput="updateFontPreview('region')">
+        <input type="number" min="0"  id="defRegionLabelSize" value="32" style="width:80px" oninput="updateFontPreview('region')">
         <div id="fontPreviewRegion" class="preview-box">
     <div class="region-preview-text">Vorschau Region</div>
 </div>
