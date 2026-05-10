@@ -722,23 +722,23 @@ label {
     position: sticky;
     top: 0;
     z-index: 2;
-
-    /* Zentrierung */
     text-align: center;
-
-    /* Hintergrund & Farbe */
-    background: var(--primary); /* Oder eine dunkle Farbe wie #333 */
-    color: white; /* Textfarbe an den Hintergrund anpassen */
-
-    /* Abstände & Ränder */
-    margin: -10px -5px 15px -5px; /* Negativer Margin gleicht Padding der Box aus */
+    background: var(--primary); 
+    color: white; 
     padding: 10px 5px;
-
-    /* Runde Ecken */
     border-radius: 6px;
-
-    /* Optional: Ein leichter Schatten, damit es sich beim Scrollen vom Text abhebt */
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    
+    /* Standard-Abstand nach unten */
+    margin: 0 0 15px 0; 
+}
+
+.popup-content h4:first-child {
+    margin: -10px -5px 15px -5px;
+}
+
+.popup-content div + h4 {
+    margin-top: 10px; /* Kleiner Abstand zum Namen oben drüber */
 }
 
 .popup-content p {
