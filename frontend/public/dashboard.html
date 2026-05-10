@@ -101,24 +101,59 @@
     <input type="range" id="defFogOpacity" min="0" max="100" oninput="document.getElementById('val-fog').textContent=this.value">
   </div>
 
-  <div class="form-row">
+<div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+  <h4 style="margin-top:0; color: var(--primary);">POI Beschriftungen</h4>
+  <div class="form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
     <div class="form-group">
-      <label>Standardschrift</label>
-      <select id="defFontMain"></select>
+      <label>POI Schriftart</label>
+      <select id="defFontMain" onchange="updateFontPreview('poi')"></select>
     </div>
     <div class="form-group">
-      <label>POI Label Farbe</label>
-      <input type="color" id="defPoiColor" oninput="updateFontPreview()">
+      <label>POI Schrift Farbe</label>
+      <input type="color" id="defPoiColor" oninput="updateFontPreview('poi')">
+    </div>
+    <div class="form-group">
+        <label>POI Border</label>
+        <input type="color" id="defPoiBorder" >
+    </div>
+  </div>
+  <div class="form-group">
+    <label>POI Vorschau & Größe (px)</label>
+    <div style="display:flex; gap:10px; align-items:center">
+        <input type="number" id="defPoiLabelSize" value="22" style="width:80px" oninput="updateFontPreview('poi')">
+        <div id="fontPreviewPoi" class="preview-box">Vorschau POI</div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-bottom: 20px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+  <h4 style="margin-top:0; color: var(--primary);">Region Beschriftungen</h4>
+  
+  <div class="form-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+    <div class="form-group">
+      <label>Region Schriftart</label>
+      <select id="defFontRegion" onchange="updateFontPreview('region')"></select>
+    </div>
+    <div class="form-group">
+      <label>Region Schrift Farbe</label>
+      <input type="color" id="defRegionColor" oninput="updateFontPreview('region')" >
+    </div>
+    <div class="form-group">
+        <label>Region Breite (px)</label>
+        <input type="number" id="defRegionWidth">
     </div>
   </div>
 
-  <div class="form-group">
-    <label>POI Label Vorschau (Größe in px)</label>
+  <div class="form-group" style="margin-top: 15px;">
+    <label>Region Vorschau & Größe (px)</label>
     <div style="display:flex; gap:10px; align-items:center">
-        <input type="number" id="defPoiLabelSize" value="22" style="width:80px" oninput="updateFontPreview()">
-        <div id="fontPreview" style="padding:10px; border:1px solid var(--border); border-radius:4px; flex-grow:1">Vorschautext</div>
+        <input type="number" id="defRegionLabelSize" value="32" style="width:80px" oninput="updateFontPreview('region')">
+        <div id="fontPreviewRegion" class="preview-box">
+    <div class="region-preview-text">Vorschau Region</div>
+</div>
     </div>
   </div>
+</div>
 
 <div class="form-group" style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px;">
   <label style="margin-bottom: 10px; display: block; font-weight: bold;">POI Größen-Konfiguration (px)</label>
@@ -144,19 +179,13 @@
   </div>
 </div>
 
-<div class="form-row" style="grid-template-columns: repeat(3, 1fr); gap: 10px;">
-    <div class="form-group">
-        <label>SVG Border</label>
-        <input type="color" id="defPoiBorder" style="width: 100%; height: 38px;">
-    </div>
+<div class="form-row" style="grid-template-columns: repeat(2, 1fr); gap: 10px;">
+
     <div class="form-group">
         <label>Ping (Sek)</label>
         <input type="number" id="defPingDur">
     </div>
-    <div class="form-group">
-        <label>Region (px)</label>
-        <input type="number" id="defRegionWidth">
-    </div>
+
 </div>
 
   <div class="modal-footer">

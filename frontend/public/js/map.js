@@ -55,6 +55,7 @@ let _settings = (() => {
 function _saveSetting(key, val) { _settings[key] = val; localStorage.setItem(_SETTINGS_KEY, JSON.stringify(_settings)); }
 function _getSetting(key, def) { return _settings[key] !== undefined ? _settings[key] : def; }
 
+let _DEFAULT_POI_BORDER_COLOR = '#bcbcbc'; // Standard-Fallback
 let _poiMarkerSize = _getSetting('poiSize', 26);   // px, 25-60
 let _showPoiLabels = _getSetting('poiLabels', false);
 let _showRegLabels = _getSetting('regLabels', false);
@@ -139,20 +140,46 @@ async function init() {
     
     if (ds.poi_size) _DEFAULT_POI_SIZE = ds.poi_size;
     
+    // PING aus den karteneinstellungen holen
+_PING_DURATION = parseInt(ds.ping_duration) || 5;
+
     // Schriftart global laden (fügt ein Style-Element in den Head ein)
-    if (ds.label_font) {
-      _DEFAULT_LABEL_FONT = ds.label_font.split('.')[0]; // Dateiname ohne .ttf
-      const fontFace = `
-        @font-face {
-          font-family: "${_DEFAULT_LABEL_FONT}";
-          src: url("/css/fonts/${ds.label_font}");
-        }
-        .region-label-text, .poi-label-text { font-family: "${_DEFAULT_LABEL_FONT}", sans-serif !important; }
-      `;
-      const style = document.createElement('style');
-      style.textContent = fontFace;
-      document.head.appendChild(style);
+const fontsToLoad = [
+    { file: ds.label_font, id: 'poi' },
+    { file: ds.region_font, id: 'region' }
+  ];
+
+  fontsToLoad.forEach(f => {
+    if (f.file) {
+      const fontName = f.file.replace(/\.[^/.]+$/, ""); // Entfernt .ttf, .otf etc.
+      if (!document.getElementById('font-style-' + fontName)) {
+        const style = document.createElement('style');
+        style.id = 'font-style-' + fontName;
+        style.textContent = `
+          @font-face { 
+            font-family: "${fontName}"; 
+            src: url("/css/fonts/${f.file}"); 
+          }
+        `;
+        document.head.appendChild(style);
+        console.log(`Font für ${f.id} registriert: ${fontName}`);
+      }
     }
+  });
+
+if (ds.label_font) {
+  // Wir nehmen den Dateinamen ohne Endung als Namen für die Schriftfamilie
+  const fontName = ds.label_font.replace(/\.[^/.]+$/, ""); 
+  const style = document.createElement('style');
+  style.textContent = `
+    @font-face { 
+      font-family: "${fontName}"; 
+      src: url("/css/fonts/${ds.label_font}") format("truetype"); 
+    }
+  `;
+  document.head.appendChild(style);
+  console.log("Font geladen:", fontName); // Zur Kontrolle in der Konsole
+}
 
     _poiMarkerSize = ds.poi_size || 30; // Globalen Wert für die Marker setzen
     
@@ -162,6 +189,9 @@ async function init() {
       _fogDensity = ds.fog_opacity / 100;
     }
     // ---------------------------------------
+
+    // Innerhalb von init(), nachdem mapData geladen wurde:
+    _DEFAULT_POI_BORDER_COLOR = ds.poi_border_color || '#bcbcbc';
 
   } catch (e) { alert(`Fehler: ${e.message}`); return; }
 
@@ -569,7 +599,7 @@ function makePoiIcon(color, iconKey, transparent) {
   const tot = s + tip;                // total height including tip
   const half = Math.round(s / 2);
 
-  const bordColor = transparent ? color : '#bcbcbc';
+  const bordColor = transparent ? color : _DEFAULT_POI_BORDER_COLOR;
   const fillColor = transparent ? 'transparent' : color;
 
   // Custom icon?
@@ -2436,29 +2466,50 @@ function _handleFeaturePing(data) {
   layer.addTo(leafletMap);
   _highlightLayer = layer;
 
-  let on = true, ticks = 0;
+let on = true, ticks = 0;
+  const tickRate = 400; // ms pro Blink-Phase
+  
+  // Berechne, wie viele Ticks wir brauchen
+  // Beispiel: 5 Sek * 1000 / 400 = 12.5 -> aufgerundet 13 Ticks
+  const maxTicks = Math.ceil((_PING_DURATION * 1000) / tickRate);
+
   _pingInterval = setInterval(() => {
-    on = !on; ticks++;
+    on = !on; 
+    ticks++;
+    
     try {
       if (type === 'poi') layer.setStyle({ fillOpacity: on ? 0.5 : 0.1, opacity: on ? 1 : 0.3 });
       else if (type === 'region') layer.setStyle({ fillOpacity: on ? 0.55 : 0.05, opacity: on ? 1 : 0.2 });
       else layer.setStyle({ opacity: on ? 0.7 : 0.1 });
     } catch { }
-    if (ticks >= 25) { // ~10s
-      clearInterval(_pingInterval); _pingInterval = null;
-      leafletMap.removeLayer(layer); _highlightLayer = null;
+
+    // Nutze nun die dynamische Tick-Anzahl
+    if (ticks >= maxTicks) { 
+      clearInterval(_pingInterval); 
+      _pingInterval = null;
+      if (_highlightLayer) {
+        leafletMap.removeLayer(_highlightLayer); 
+        _highlightLayer = null;
+      }
     }
-  }, 400);
+  }, tickRate);
 }
 
 
 // ═══════════════════════════════════════════════════════════════════════
-// POI LABELS  (Bilbo font, below marker)
+// POI LABELS  (below marker)
 // ═══════════════════════════════════════════════════════════════════════
 const _poiLabelGroup = L.layerGroup();
 
 function _renderPoiLabels() {
   _poiLabelGroup.clearLayers();
+  
+  // Default Settings aus mapData holen
+  const ds = mapData.map.default_settings || {};
+  const poiColor = ds.poi_label_color || '#e2e8f0'; // Dein Standard-Hellgrau/Weiß
+  const poiSize = parseInt(ds.poi_label_size) || 16;
+  const poiFont = ds.label_font ? ds.label_font.split('.')[0] : 'Arial'; // Fallback auf Systemfont
+
   mapData.pois.forEach(p => {
     if (p.visibility === 'hidden' && !isAdmin) return;
     const e = poiLayers[p.id];
@@ -2467,12 +2518,22 @@ function _renderPoiLabels() {
     if (!lay || !leafletMap.hasLayer(lay)) return;
 
     const s = _poiMarkerSize;
-    const tip = Math.round(s * 0.35);
+    // Das Icon wird zentriert unter dem Marker platziert
     const lbl = L.divIcon({
-      html: `<div class="poi-name-label">${escHtml(p.name)}</div>`,
-      iconSize: [120, 24], iconAnchor: [60, -2],
+      html: `<div class="poi-name-label" style="
+        font-family: '${poiFont}', sans-serif;
+        font-size: ${poiSize}px;
+        color: ${poiColor};
+        white-space: nowrap;
+        display: flex;
+        justify-content: center;
+        filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.8));
+      ">${escHtml(p.name)}</div>`,
+      iconSize: [200, poiSize + 4], // Breite groß genug wählen, damit nichts umbricht
+      iconAnchor: [100, -2],        // Horizontal mittig (200/2), Vertikal leicht unter Marker
       className: ''
     });
+
     L.marker([+p.lat, +p.lng], { icon: lbl, interactive: false })
       .addTo(_poiLabelGroup);
   });
@@ -2500,28 +2561,51 @@ let _currentRegLabelH = Math.round(210 * 222 / 616);
 function _renderRegionLabels() {
   _regLabelGroup.clearLayers();
   
+  const ds = mapData.map.default_settings || {};
+  const regColor = ds.region_label_color || '#2d1a0a';
+  const regSize = parseInt(ds.region_label_size) || 18;
+  const regFont = ds.region_font ? ds.region_font.replace(/\.[^/.]+$/, "") : 'MorrisRoman';
+
+  // Sicherstellen, dass wir die aktuellen Dimensionen nutzen
+  const w = _currentRegLabelW;
+  const h = _currentRegLabelH;
+
   mapData.regions.forEach(region => {
     if (region.visibility === 'hidden' && !isAdmin) return;
     
     const e = regionLayers[region.id];
     if (!e || !e.poly) return;
     
-    // Bestimmen, ob die Ebene gerade sichtbar ist
     const lay = e.bucket === PUB ? globalLayers.regionLayer : e.bucket === HID ? hiddenLayers.regionLayer : layerState[e.groupId]?.regionLayer;
     if (!lay || !leafletMap.hasLayer(lay)) return;
 
     try {
-      // NUTZUNG DER LEAFLET BOUNDS FÜR DIE MITTE
-      // getBounds().getCenter() ignoriert die Punkte-Dichte und nimmt die geometrische Mitte des Polygons
       const center = e.poly.getBounds().getCenter();
 
       const lbl = L.divIcon({
-        html: `<div class="reg-name-label" style="width:${_REG_LABEL_W}px;height:${_REG_LABEL_H}px">
-          <img src="${_REG_LABEL_URL}" style="width:100%;height:100%;position:absolute;top:0;left:0">
-          <span class="reg-name-text">${escHtml(region.name)}</span>
-        </div>`,
-        iconSize: [_REG_LABEL_W, _REG_LABEL_H],
-        iconAnchor: [_REG_LABEL_W / 2, _REG_LABEL_H / 2],
+        html: `
+          <div class="reg-name-label" style="width:${w}px; height:${h}px; pointer-events: none;">
+            <img src="${_REG_LABEL_URL}" style="width:100%; height:100%; position:absolute; top:0; left:0;">
+            <span class="reg-name-text" style="
+              position: relative;
+              z-index: 1;
+              font-family: '${regFont}', serif; 
+              font-size: ${regSize}px; 
+              color: ${regColor};
+              width: 63%; 
+              height: 55%; 
+              display: flex; 
+              align-items: center; 
+              justify-content: center;
+              text-align: center;
+              max-width: none;
+              line-height: 1.1;
+            ">
+              ${escHtml(region.name)}
+            </span>
+          </div>`,
+        iconSize: [w, h],
+        iconAnchor: [w / 2, h / 2],
         className: ''
       });
 
@@ -2537,6 +2621,7 @@ function _renderRegionLabels() {
     _regLabelGroup.addTo(leafletMap);
   }
 }
+
 function _removeRegionLabels() {
   _regLabelGroup.clearLayers();
   leafletMap.removeLayer(_regLabelGroup);
@@ -2554,20 +2639,30 @@ function _drawPing(lat, lng) {
       fillOpacity: 0.3, weight: 2.5, opacity: 0.9, className: ''
     }).addTo(leafletMap)
   );
+
   let frame = 0;
+  const frameRate = 60; // ms pro Frame
+  // Berechne wie viele Frames wir brauchen, um die Sekunden zu füllen
+  // Beispiel: 5 Sek * 1000 / 60 = ~83 Frames
+  const maxFrames = (_PING_DURATION * 1000) / frameRate;
+
   const anim = setInterval(() => {
     frame++;
     rings.forEach((r, i) => {
+      // Die Phase sorgt für das "Nachrücken" der Ringe
+      // Wir lassen die 30 als Teiler für die Geschwindigkeit der Ausdehnung
       const phase = (frame + i * 6) % 30;
       const t = phase / 30;
       r.setRadius(8 + t * 32);
       r.setStyle({ opacity: 1 - t, fillOpacity: (1 - t) * 0.25 });
     });
-    if (frame >= 50) {
+
+    // Hier nutzen wir jetzt die dynamische Grenze
+    if (frame >= maxFrames) {
       clearInterval(anim);
       rings.forEach(r => leafletMap.removeLayer(r));
     }
-  }, 60);
+  }, frameRate);
 }
 
 function _manualPing(e) {

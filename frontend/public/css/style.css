@@ -1540,8 +1540,6 @@ label {
   resize: vertical
 }
 
-/* ── v0.8.1 ── */
-
 /* POI name labels (Bilbo font) */
 /* 1. Die Schriftart definieren */
 @font-face {
@@ -1676,6 +1674,46 @@ label {
 .icon-picker-selected:hover {
   background: var(--border)
 }
+
+.preview-box {
+    padding: 0; 
+    border: 1px solid var(--border); 
+    border-radius: 4px; 
+    flex-grow: 1; 
+    background: rgba(0,0,0,0.2);
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden; /* Falls der Text zu lang wird */
+  }
+
+#fontPreviewRegion {
+    position: relative;
+    background-image: url('https://www.9ps.eu/dnd/items/Worldmapper/label_region.webp');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    /* Das Bild-Verhältnis ist 616:222. Wir erzwingen eine passende Höhe basierend auf der Breite */
+    aspect-ratio: 616 / 222; 
+    border: none;
+  }
+
+  /* Der Textbereich innerhalb des Bildes */
+.region-preview-text {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    /* Berechnung der nutzbaren Fläche (ca. 63% Breite, 55% Höhe) */
+    width: 63%; 
+    height: 55%;
+    /* Verschiebung zum Zentrum des Textbereichs im Bild */
+    margin-left: 1%; 
+    margin-top: -1%;
+    line-height: 0.9;
+    word-break: break-word;
+  }
 
 .icon-picker-preview {
   display: flex;

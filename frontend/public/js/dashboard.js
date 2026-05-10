@@ -161,20 +161,23 @@ async function openSettings(id) {
   
   // JSON Standardwerte laden
   const ds = m.default_settings || {};
-  document.getElementById('defFogOpacity').value = ds.fog_opacity ?? 70;
-  document.getElementById('val-fog').textContent = ds.fog_opacity ?? 70;
-  document.getElementById('defFontMain').value = ds.label_font || '';
-  document.getElementById('defPoiLabelSize').value = parseInt(ds.poi_label_size) || 22;
-  document.getElementById('defPoiColor').value = ds.poi_label_color || '#e2e8f0';
+    document.getElementById('defFogOpacity').value = ds.fog_opacity ?? 70;
+    document.getElementById('val-fog').textContent = ds.fog_opacity ?? 70;
+    document.getElementById('defFontMain').value = ds.label_font || '';
+    document.getElementById('defPoiLabelSize').value = parseInt(ds.poi_label_size) || 22;
+    document.getElementById('defPoiColor').value = ds.poi_label_color || '#e2e8f0';
+    document.getElementById('defFontRegion').value = ds.region_font || '';
+    document.getElementById('defRegionLabelSize').value = parseInt(ds.region_label_size) || 32;
+    document.getElementById('defRegionColor').value = ds.region_label_color || '#e2e8f0';
+    document.getElementById('defPoiBorder').value = ds.poi_border_color || '#bcbcbc';
+    document.getElementById('defPingDur').value = ds.ping_duration || 5;
+    document.getElementById('defRegionWidth').value = parseInt(ds.region_label_width) || 210;
 
-  document.getElementById('defPoiBorder').value = ds.poi_border_color || '#bcbcbc';
-  document.getElementById('defPingDur').value = ds.ping_duration || 5;
-  document.getElementById('defRegionWidth').value = parseInt(ds.region_label_width) || 210;
+    updateFontPreview('poi');
+    updateFontPreview('region');
 
-  updateFontPreview();
-
-  document.getElementById('settingsTitle').textContent = `⚙️ ${m.name}`;
-  document.getElementById('settingsMapId').value = id;
+    document.getElementById('settingsTitle').textContent = `⚙️ ${m.name}`;
+    document.getElementById('settingsMapId').value = id;
 
 // --- NEU/KORRIGIERT: POI REGELR POSITIONIEREN ---
   const minVal = ds.poi_min_size || 25;
@@ -262,7 +265,7 @@ function updatePoiSliders(source) {
   document.getElementById('val-poiSize').textContent = sizeEl.value;
   document.getElementById('val-poiMax').textContent = maxEl.value;
   
-  if(typeof updateFontPreview === 'function') updateFontPreview();
+  if(typeof updateFontPreview === 'function') updateFontPreview('poi');
 }
 
 async function saveGeneralSettings() {
@@ -272,6 +275,9 @@ async function saveGeneralSettings() {
         fog_opacity: parseInt(document.getElementById('defFogOpacity').value),
         poi_label_size: document.getElementById('defPoiLabelSize').value + 'px',
         poi_label_color: document.getElementById('defPoiColor').value,
+        region_font: document.getElementById('defFontRegion').value,
+        region_label_size: document.getElementById('defRegionLabelSize').value + 'px',
+        region_label_color: document.getElementById('defRegionColor').value,
         region_label_width: document.getElementById('defRegionWidth').value + 'px',
         poi_size: parseInt(document.getElementById('defPoiSize').value),
         poi_min_size: parseInt(document.getElementById('defPoiMin').value),
@@ -420,41 +426,54 @@ async function uploadImage() {
 // ── Fonts ──────────────────────────────────────────────────────────────
 
 async function loadFontList() {
-    try {
-        const fonts = await API.get('/api/fonts');
-        const sel = document.getElementById('defFontMain');
-        sel.innerHTML = fonts.map(f => `<option value="${f}">${f.replace(/\.(ttf|otf)$/i, '')}</option>`).join('');
-        sel.addEventListener('change', updateFontPreview);
-    } catch(e) { console.error("Fonts konnten nicht geladen werden"); }
+  try {
+    const fonts = await API.get('/api/fonts');
+    const selects = ['defFontMain', 'defFontRegion'];
+    
+    selects.forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Standard-Systemschrift</option>' + 
+        fonts.map(f => `<option value="${f}">${f.replace(/\.(ttf|otf)$/i, '')}</option>`).join('');
+    });
+  } catch (e) {
+    console.error("Fonts konnten nicht geladen werden", e);
+  }
 }
 
-function updateFontPreview() {
-    const p = document.getElementById('fontPreview');
-    const fontFile = document.getElementById('defFontMain').value;
-    if (!fontFile) return;
+function updateFontPreview(type) {
+    const isPoi = type === 'poi';
+    const fontFile = document.getElementById(isPoi ? 'defFontMain' : 'defFontRegion').value;
+    const size = document.getElementById(isPoi ? 'defPoiLabelSize' : 'defRegionLabelSize').value;
+    const color = document.getElementById(isPoi ? 'defPoiColor' : 'defRegionColor').value;
+    const previewContainer = document.getElementById(isPoi ? 'fontPreviewPoi' : 'fontPreviewRegion');
 
-    const size = document.getElementById('defPoiLabelSize').value;
-    const color = document.getElementById('defPoiColor').value;
-    
-    // Die Schriftart-Familie ist der Dateiname ohne Endung
-    const fontName = fontFile.split('.')[0];
+    if (!previewContainer) return;
 
-    // Dynamisch @font-face hinzufügen, falls noch nicht geschehen
-    if (!document.getElementById('style-' + fontName)) {
-        const newStyle = document.createElement('style');
-        newStyle.id = 'style-' + fontName;
-        newStyle.textContent = `
-            @font-face {
-                font-family: "${fontName}";
-                src: url("/css/fonts/${fontFile}");
-            }
-        `;
-        document.head.appendChild(newStyle);
+    // Ziel-Element für den Text (bei Region das innere Div, bei POI das Container selbst)
+    const textTarget = isPoi ? previewContainer : previewContainer.querySelector('.region-preview-text');
+
+    if (fontFile) {
+        const fontName = fontFile.split('.')[0];
+        if (!document.getElementById('style-' + fontName)) {
+            const newStyle = document.createElement('style');
+            newStyle.id = 'style-' + fontName;
+            newStyle.textContent = `@font-face { font-family: "${fontName}"; src: url("/css/fonts/${fontFile}"); }`;
+            document.head.appendChild(newStyle);
+        }
+        textTarget.style.fontFamily = `"${fontName}"`;
+    } else {
+        textTarget.style.fontFamily = 'inherit';
     }
 
-    p.style.fontFamily = `"${fontName}"`;
-    p.style.fontSize = size + 'px';
-    p.style.color = color;
+    textTarget.style.fontSize = size + 'px';
+    textTarget.style.color = color;
+    
+    // Optional: Vorschau-Breite an den Regler anpassen (falls gewünscht)
+    if (!isPoi) {
+        const regWidth = document.getElementById('defRegionWidth').value || 210;
+        previewContainer.style.maxWidth = regWidth + 'px';
+    }
 }
 
 // ── Admins ──────────────────────────────────────────────────────────────
